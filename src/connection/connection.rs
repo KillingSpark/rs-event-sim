@@ -1,4 +1,4 @@
-use crate::id_types::{ConnectionId, ConnectionTypeId, ModuleId, PortId};
+use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, ModuleId, PortId};
 
 pub trait Connection {
     fn push(&mut self, msgs: Vec<Box<crate::messages::message::Message>>) -> Result<(), Box<std::error::Error>>;
