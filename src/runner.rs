@@ -70,15 +70,6 @@ impl Runner {
     }
 
     fn process_result(&mut self, result: HandleResult) {
-        //push all new timer events in the queue
-        match result.timer_events {
-            None => {}
-            Some(events) => {
-                for ev in events {
-                    self.timer_queue.push(ev);
-                }
-            }
-        }
     }
 
     //returns how many messages were found
@@ -108,6 +99,7 @@ impl Runner {
                     time: &self.clock,
                     id_reg: id_reg,
                     connections: &mut self.connections,
+                    timer_queue: &mut self.timer_queue,
                 };
                 let result = recipient.handle_message(msg.as_ref(), &mut ctx);
 
@@ -152,6 +144,7 @@ impl Runner {
                 time: &self.clock,
                 id_reg: id_reg,
                 connections: &mut self.connections,
+                timer_queue: &mut self.timer_queue,
             };
 
             let result = module.handle_timer_event(ev.event.as_ref(), &mut ctx);

@@ -10,10 +10,10 @@ pub struct HandleContext<'a> {
     pub id_reg: &'a mut IdRegistrar,
 
     pub connections: &'a mut ConnectionMesh,
+    pub timer_queue: &'a mut std::collections::BinaryHeap<TimerEvent>,
 }
 
 pub struct HandleResult {
-    pub timer_events: Option<Vec<TimerEvent>>,
 }
 
 pub trait Module {

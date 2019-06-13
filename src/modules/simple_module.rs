@@ -16,7 +16,7 @@ impl Module for SimpleModule {
         _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!("Wohoo message received!");
-        Ok(HandleResult { timer_events: None })
+        Ok(HandleResult {})
     }
 
     fn handle_timer_event(
@@ -26,15 +26,13 @@ impl Module for SimpleModule {
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!("Id: {} Handled timer event: {}", self.id, ev.event_id());
 
-        let mut new_events = Vec::new();
-
         let te_type = *ctx.id_reg.lookup_id("TextEvent".to_owned()).unwrap();
 
         if ev.event_type_id() == te_type {
             let tev: &TextEvent = ev.as_any().downcast_ref::<TextEvent>().unwrap();
             println!("Was Textevent with data: {}", tev.data);
             if ctx.time.now() < 20 {
-                new_events.push(TimerEvent {
+                ctx.timer_queue.push(TimerEvent {
                     event: Box::new(TextEvent {
                         data: tev.data.clone(),
                         id: ctx.id_reg.new_id(),
@@ -63,9 +61,7 @@ impl Module for SimpleModule {
             Some(c) => {c.push(vec![sig]).unwrap();}
         }
 
-        Ok(HandleResult {
-            timer_events: Some(new_events),
-        })
+        Ok(HandleResult {})
     }
 
     fn module_type_id(&self) -> ModuleTypeId {
