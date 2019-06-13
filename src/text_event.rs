@@ -1,19 +1,20 @@
 use crate::event::Event;
 use std::any::Any;
+use crate::id_types::{EventsId, EventsTypeId};
 
 #[derive(Clone)]
 pub struct TextEvent {
     pub data: String,
-    pub ev_id: u64,
+    pub id: u64,
     pub type_id: u64,
 }
 
 impl Event for TextEvent {
-    fn event_type_id(&self) -> u64 {
+    fn event_type_id(&self) -> EventsTypeId {
         self.type_id
     }
-    fn event_id(&self) -> u64 {
-        self.ev_id
+    fn event_id(&self) -> EventsId {
+        self.id
     }
     fn as_any(&self) -> &dyn Any {
         self

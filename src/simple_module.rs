@@ -2,10 +2,11 @@ use crate::event::{Event, TimerEvent};
 use crate::messages::message::Message;
 use crate::module::{HandleContext, HandleResult, Module};
 use crate::text_event::TextEvent;
+use crate::id_types::{ModuleId, ModuleTypeId};
 
 pub struct SimpleModule {
-    pub type_id: u64,
-    pub mod_id: u64,
+    pub type_id: ModuleTypeId,
+    pub id: ModuleId,
 }
 
 impl Module for SimpleModule {
@@ -23,7 +24,7 @@ impl Module for SimpleModule {
         ev: &Event,
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!("Id: {} Handled timer event: {}", self.mod_id, ev.event_id());
+        println!("Id: {} Handled timer event: {}", self.id, ev.event_id());
 
         let mut new_events = Vec::new();
 
@@ -36,7 +37,7 @@ impl Module for SimpleModule {
                 new_events.push(TimerEvent {
                     event: Box::new(TextEvent {
                         data: tev.data.clone(),
-                        ev_id: ctx.id_reg.new_id(),
+                        id: ctx.id_reg.new_id(),
                         type_id: te_type,
                     }),
                     time: ctx.time.now() + 1,
@@ -52,7 +53,7 @@ impl Module for SimpleModule {
 
         let sig = Box::new(crate::text_message::TextMsg {
             type_id: *ctx.id_reg.lookup_id("TextSignal".to_owned()).unwrap(),
-            sig_id: ctx.id_reg.new_id(),
+            id: ctx.id_reg.new_id(),
             data: "Received Event".to_owned(),
         });
 
@@ -67,11 +68,11 @@ impl Module for SimpleModule {
         })
     }
 
-    fn module_type_id(&self) -> u64 {
+    fn module_type_id(&self) -> ModuleTypeId {
         self.type_id
     }
 
-    fn module_id(&self) -> u64 {
-        self.mod_id
+    fn module_id(&self) -> ModuleId {
+        self.id
     }
 }

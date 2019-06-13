@@ -104,8 +104,6 @@ impl Runner {
                     .modules
                     .get_mut(self.connections.connections_in.get(&conn_id).unwrap())
                     .unwrap();
-                let recipient_id = recipient.module_id();
-                let ports = self.connections.connections_out.get(&recipient_id).unwrap();
                 let mut ctx = HandleContext {
                     time: &self.clock,
                     id_reg: id_reg,
@@ -150,8 +148,6 @@ impl Runner {
                     ev.mod_id
                 ),
             };
-            let recipient_id = module.module_id();
-            let ports = self.connections.connections_out.get(&recipient_id).unwrap();
             let mut ctx = HandleContext {
                 time: &self.clock,
                 id_reg: id_reg,

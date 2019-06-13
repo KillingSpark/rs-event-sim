@@ -7,6 +7,7 @@ mod module;
 mod runner;
 mod simple_module;
 mod text_event;
+mod id_types;
 
 use event::TimerEvent;
 use id_registrar::IdRegistrar;
@@ -26,7 +27,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     id_reg.register_type("TextSignal".to_owned());
 
     let smod = Box::new(SimpleModule {
-        mod_id: id_reg.new_id(),
+        id: id_reg.new_id(),
         type_id: sm_type,
     });
     r.add_timer_event(TimerEvent {
@@ -34,14 +35,14 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         mod_id: smod.module_id(),
         event: Box::new(TextEvent {
             type_id: te_type,
-            ev_id: id_reg.new_id(),
+            id: id_reg.new_id(),
             data: "StarterEvent".to_owned(),
         }),
     })
     .unwrap();
 
     let smod2 = Box::new(SimpleModule {
-        mod_id: id_reg.new_id(),
+        id: id_reg.new_id(),
         type_id: sm_type,
     });
     r.add_timer_event(TimerEvent {
@@ -49,14 +50,14 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         mod_id: smod2.module_id(),
         event: Box::new(TextEvent {
             type_id: te_type,
-            ev_id: id_reg.new_id(),
+            id: id_reg.new_id(),
             data: "StarterEvent2".to_owned(),
         }),
     })
     .unwrap();
 
-    let smod_id = smod.mod_id;
-    let smod2_id = smod2.mod_id;
+    let smod_id = smod.id;
+    let smod2_id = smod2.id;
 
     r.add_module(smod).unwrap();
     r.add_module(smod2).unwrap();
@@ -64,7 +65,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let sconn = SimpleConnection {
         buf: Vec::new(),
 
-        conn_id: id_reg.new_id(),
+        id: id_reg.new_id(),
         type_id: sc_type,
     };
     r.connect_modules(Box::new(sconn), smod_id, 0, smod2_id)

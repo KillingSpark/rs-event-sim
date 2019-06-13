@@ -1,9 +1,10 @@
 use crate::messages::message::Message;
+use crate::id_types::{ConnectionId, ConnectionTypeId};
 
 pub struct SimpleConnection {
     pub buf: Vec<Box<Message>>,
-    pub conn_id: u64,
-    pub type_id: u64,
+    pub id: ConnectionId,
+    pub type_id: ConnectionTypeId,
 }
 
 impl crate::connection::connection::Connection for SimpleConnection {
@@ -18,10 +19,10 @@ impl crate::connection::connection::Connection for SimpleConnection {
         Ok(Some(lmsgs))
     }
 
-    fn connection_id(&self) -> u64 {
-        self.conn_id
+    fn connection_id(&self) -> ConnectionId {
+        self.id
     }
-    fn connection_type_id(&self) -> u64 {
+    fn connection_type_id(&self) -> ConnectionTypeId {
         self.type_id
     }
 }

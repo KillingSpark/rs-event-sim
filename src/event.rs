@@ -1,8 +1,9 @@
 use std::any::Any;
+use crate::id_types::{EventsId, EventsTypeId};
 
 pub trait Event {
-    fn event_type_id(&self) -> u64;
-    fn event_id(&self) -> u64;
+    fn event_type_id(&self) -> EventsTypeId;
+    fn event_id(&self) -> EventsId;
 
     //To downcast use this:
     //let tev: &TextEvent = event.as_any().downcast_ref::<TextEvent>().unwrap();

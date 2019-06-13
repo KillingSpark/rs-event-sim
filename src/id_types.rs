@@ -1,0 +1,9 @@
+pub type ModuleId = u64;
+pub type ModuleTypeId = u64;
+pub type EventsId = u64;
+pub type EventsTypeId = u64;
+pub type MessageId = u64;
+pub type MessageTypeId = u64;
+pub type ConnectionId = u64;
+pub type ConnectionTypeId = u64;
+pub type PortId = u64;

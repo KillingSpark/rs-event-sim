@@ -3,6 +3,7 @@ use crate::event::{Event, TimerEvent};
 use crate::id_registrar::IdRegistrar;
 use crate::messages::message::Message;
 use crate::connection::connection::ConnectionMesh;
+use crate::id_types::{ModuleId, ModuleTypeId};
 
 pub struct HandleContext<'a> {
     pub time: &'a Clock,
@@ -28,6 +29,6 @@ pub trait Module {
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>>;
 
-    fn module_type_id(&self) -> u64;
-    fn module_id(&self) -> u64;
+    fn module_type_id(&self) -> ModuleTypeId;
+    fn module_id(&self) -> ModuleId;
 }
