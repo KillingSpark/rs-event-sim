@@ -1,6 +1,6 @@
 use crate::event::{Event, TimerEvent};
 use crate::messages::message::Message;
-use crate::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{HandleContext, HandleResult, Module};
 use crate::events::text_event::TextEvent;
 use crate::id_types::{ModuleId, ModuleTypeId};
 

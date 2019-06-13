@@ -3,17 +3,15 @@ mod connection;
 mod events;
 mod id_registrar;
 mod messages;
-mod module;
+mod modules;
 mod runner;
-mod simple_module;
 mod id_types;
 
 use event::TimerEvent;
 use id_registrar::IdRegistrar;
-use module::Module;
+use modules::{module::Module, simple_module::SimpleModule};
 
 use clock::Clock;
-use simple_module::SimpleModule;
 use connection::connection::ConnectionMesh;
 use connection::simple_connection::SimpleConnection;
 use messages::text_message;

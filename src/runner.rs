@@ -2,7 +2,7 @@ use crate::clock::Clock;
 use crate::connection::connection::{Connection, ConnectionMesh};
 use crate::event::TimerEvent;
 use crate::id_registrar::IdRegistrar;
-use crate::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{HandleContext, HandleResult, Module};
 
 pub struct Runner {
     pub clock: Clock,
