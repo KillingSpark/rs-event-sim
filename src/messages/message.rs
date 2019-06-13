@@ -1,6 +1,6 @@
 use std::any::Any;
-use crate::id_types::MessageId;
-use crate::id_types::MessageTypeId;
+use crate::id_mngmnt::id_types::MessageId;
+use crate::id_mngmnt::id_types::MessageTypeId;
 
 pub trait Message {
     fn msg_type_id(&self) -> MessageTypeId;

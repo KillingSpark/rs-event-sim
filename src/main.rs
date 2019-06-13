@@ -1,14 +1,13 @@
 mod clock;
 mod connection;
 mod events;
-mod id_registrar;
+mod id_mngmnt;
 mod messages;
 mod modules;
 mod runner;
-mod id_types;
 
 use event::TimerEvent;
-use id_registrar::IdRegistrar;
+use id_mngmnt::{id_registrar::IdRegistrar};
 use modules::{module::Module, simple_module::SimpleModule};
 
 use clock::Clock;

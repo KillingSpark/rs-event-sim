@@ -1,5 +1,5 @@
 use crate::messages::message::Message;
-use crate::id_types::{ConnectionId, ConnectionTypeId};
+use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId};
 
 pub struct SimpleConnection {
     pub buf: Vec<Box<Message>>,

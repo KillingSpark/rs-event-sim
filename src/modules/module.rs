@@ -1,9 +1,9 @@
 use crate::clock::Clock;
 use crate::event::{Event, TimerEvent};
-use crate::id_registrar::IdRegistrar;
 use crate::messages::message::Message;
 use crate::connection::connection::ConnectionMesh;
-use crate::id_types::{ModuleId, ModuleTypeId};
+use crate::id_mngmnt::id_registrar::IdRegistrar;
+use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId};
 
 pub struct HandleContext<'a> {
     pub time: &'a Clock,

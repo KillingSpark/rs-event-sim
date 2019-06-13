@@ -1,6 +1,6 @@
 use crate::messages::message::Message;
 use std::any::Any;
-use crate::id_types::{MessageId, MessageTypeId};
+use crate::id_mngmnt::id_types::{MessageId, MessageTypeId};
 
 pub struct TextMsg {
     pub id: MessageId,
