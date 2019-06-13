@@ -6,7 +6,7 @@ pub struct SimpleConnection {
     pub type_id: u64,
 }
 
-impl crate::connection::Connection for SimpleConnection {
+impl crate::connection::connection::Connection for SimpleConnection {
     fn push(&mut self, msgs: Vec<Box<Message>>) -> Result<(), Box<std::error::Error>>{
         let mut lmsgs = msgs;
         self.buf.append(&mut lmsgs);

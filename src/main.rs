@@ -5,7 +5,6 @@ mod id_registrar;
 mod message;
 mod module;
 mod runner;
-mod simple_connection;
 mod simple_module;
 mod text_event;
 mod text_message;
@@ -17,6 +16,8 @@ use module::Module;
 use clock::Clock;
 use simple_module::SimpleModule;
 use text_event::TextEvent;
+use connection::connection::ConnectionMesh;
+use connection::simple_connection::SimpleConnection;
 
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let te_type = id_reg.register_type("TextEvent".to_owned());
@@ -60,7 +61,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_module(smod2).unwrap();
 
-    let sconn = simple_connection::SimpleConnection {
+    let sconn = SimpleConnection {
         buf: Vec::new(),
 
         conn_id: id_reg.new_id(),
@@ -78,7 +79,7 @@ fn main() {
         modules: std::collections::HashMap::new(),
         timer_queue: std::collections::BinaryHeap::new(),
 
-        connections: crate::connection::ConnectionMesh {
+        connections: ConnectionMesh {
             connections: std::collections::HashMap::new(),
             connections_in: std::collections::HashMap::new(),
             connections_out: std::collections::HashMap::new(),

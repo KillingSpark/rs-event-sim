@@ -43,7 +43,7 @@ impl ConnectionMesh {
         Ok(())
     }
 
-    pub fn get_out_connection(&mut self, mod_id: u64, port: u64) -> Option<&mut Box<crate::connection::Connection>>{
+    pub fn get_out_connection(&mut self, mod_id: u64, port: u64) -> Option<&mut Box<Connection>>{
         match self.connections_out.get(&mod_id) {
             Some(c) => {
                 match c.get(&port) {
