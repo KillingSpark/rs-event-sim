@@ -1,4 +1,4 @@
-use crate::message::Message;
+use crate::messages::message::Message;
 
 pub struct SimpleConnection {
     pub buf: Vec<Box<Message>>,

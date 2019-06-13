@@ -1,5 +1,5 @@
 use crate::event::{Event, TimerEvent};
-use crate::message::Message;
+use crate::messages::message::Message;
 use crate::module::{HandleContext, HandleResult, Module};
 use crate::text_event::TextEvent;
 

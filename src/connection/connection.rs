@@ -1,6 +1,6 @@
 pub trait Connection {
-    fn push(&mut self, msgs: Vec<Box<crate::message::Message>>) -> Result<(), Box<std::error::Error>>;
-    fn pull(&mut self) -> Result<Option<Vec<Box<crate::message::Message>>>, Box<std::error::Error>>;
+    fn push(&mut self, msgs: Vec<Box<crate::messages::message::Message>>) -> Result<(), Box<std::error::Error>>;
+    fn pull(&mut self) -> Result<Option<Vec<Box<crate::messages::message::Message>>>, Box<std::error::Error>>;
 
     fn connection_id(&self) -> u64;
     fn connection_type_id(&self) -> u64;

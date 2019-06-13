@@ -85,7 +85,7 @@ impl Runner {
     fn process_messages(&mut self, id_reg: &mut IdRegistrar) -> u64 {
         let mut msg_counter = 0;
 
-        let mut collected_msgs: Vec<(u64, Vec<Box<crate::message::Message>>)> = Vec::new();
+        let mut collected_msgs: Vec<(u64, Vec<Box<crate::messages::message::Message>>)> = Vec::new();
 
         for (_, c) in &mut self.connections.connections {
             let msgs = match c.pull() {

@@ -1,7 +1,7 @@
 use crate::clock::Clock;
 use crate::event::{Event, TimerEvent};
 use crate::id_registrar::IdRegistrar;
-use crate::message::Message;
+use crate::messages::message::Message;
 use crate::connection::connection::ConnectionMesh;
 
 pub struct HandleContext<'a> {

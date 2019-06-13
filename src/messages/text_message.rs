@@ -1,4 +1,4 @@
-use crate::message::Message;
+use crate::messages::message::Message;
 use std::any::Any;
 
 pub struct TextMsg {

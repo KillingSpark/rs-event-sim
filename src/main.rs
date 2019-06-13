@@ -2,12 +2,11 @@ mod clock;
 mod connection;
 mod event;
 mod id_registrar;
-mod message;
+mod messages;
 mod module;
 mod runner;
 mod simple_module;
 mod text_event;
-mod text_message;
 
 use event::TimerEvent;
 use id_registrar::IdRegistrar;
@@ -18,6 +17,7 @@ use simple_module::SimpleModule;
 use text_event::TextEvent;
 use connection::connection::ConnectionMesh;
 use connection::simple_connection::SimpleConnection;
+use messages::text_message;
 
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let te_type = id_reg.register_type("TextEvent".to_owned());
