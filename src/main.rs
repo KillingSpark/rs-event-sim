@@ -8,7 +8,7 @@ mod runner;
 
 use event::TimerEvent;
 use id_mngmnt::{id_registrar::IdRegistrar};
-use modules::{module::Module, simple_module::SimpleModule, sink::Sink};
+use modules::{module::Module, sink::Sink};
 use modules::simple_module;
 
 use clock::Clock;
@@ -18,19 +18,13 @@ use messages::text_message;
 use events::{event, text_event::TextEvent};
 
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
+    simple_module::register(id_reg);
     let te_type = id_reg.register_type("TextEvent".to_owned());
-    let sm_type = id_reg.register_type("SimpleModule".to_owned());
     let sc_type = id_reg.register_type("SimpleConnection".to_owned());
     let sink_type = id_reg.register_type("SinkModule".to_owned());
     id_reg.register_type("TextSignal".to_owned());
 
-    let smod = Box::new(SimpleModule {
-        id: id_reg.new_id(),
-        type_id: sm_type,
-
-        msg_counter: 0,
-        msg_time: 0,
-    });
+    let smod = Box::new(simple_module::new_simple_module(id_reg));
 
     let sink1 = Box::new( Sink{
         id: id_reg.new_id(),

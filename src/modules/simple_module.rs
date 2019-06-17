@@ -13,6 +13,21 @@ pub struct SimpleModule {
 }
 
 pub static OUT_GATE: u64 = 0;
+pub static TYPE_STR: &str = "SimpleModule";
+
+pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+    id_reg.register_type(TYPE_STR.to_owned());
+}
+
+pub fn new_simple_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> SimpleModule {
+    SimpleModule {
+        id: id_reg.new_id(),
+        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+
+        msg_counter: 0,
+        msg_time: 0,
+    }
+}
 
 impl SimpleModule {
     fn send_to_all(&mut self, ctx: &mut HandleContext) {
