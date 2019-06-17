@@ -148,6 +148,14 @@ impl ConnectionMesh {
             .ports
             .get(&port)
             .unwrap();
+
+        match out_port.kind  {
+            PortKind::In => {
+                panic!("Tried to send message over port that is not an out-going port");
+            }
+            PortKind::Out => {},
+        }
+        
         let conn = self.connections.get_mut(&out_port.conn_id).unwrap();
 
         match conn.handle_message(msg, ctx) {

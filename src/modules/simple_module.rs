@@ -12,9 +12,11 @@ pub struct SimpleModule {
     pub msg_time: u64,
 }
 
+pub static OUT_GATE: u64 = 0;
+
 impl SimpleModule {
     fn send_to_all(&mut self, ctx: &mut HandleContext) {
-        let ports = ctx.connections.get_ports(self.module_id(), 0);
+        let ports = ctx.connections.get_ports(self.module_id(), OUT_GATE);
 
 
         match ports {
@@ -30,7 +32,7 @@ impl SimpleModule {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
                     };
-                    ctx.connections.send_message(sig, self.id, 0, port, &mut mctx);
+                    ctx.connections.send_message(sig, self.id, OUT_GATE, port, &mut mctx);
                 }
                 self.msg_counter += 1;
             }

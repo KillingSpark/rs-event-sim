@@ -9,6 +9,7 @@ mod runner;
 use event::TimerEvent;
 use id_mngmnt::{id_registrar::IdRegistrar};
 use modules::{module::Module, simple_module::SimpleModule, sink::Sink};
+use modules::simple_module;
 
 use clock::Clock;
 use connection::connection::ConnectionMesh;
@@ -31,12 +32,12 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         msg_time: 0,
     });
 
-    let smod2 = Box::new( Sink{
+    let sink1 = Box::new( Sink{
         id: id_reg.new_id(),
         type_id: sink_type,
     });
     
-    let smod3 = Box::new( Sink{
+    let sink2 = Box::new( Sink{
         id: id_reg.new_id(),
         type_id: sink_type,
     });
@@ -53,12 +54,12 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     .unwrap();
 
     let smod_id = smod.id;
-    let smod2_id = smod2.id;
-    let smod3_id = smod3.id;
+    let s1_id = sink1.id;
+    let s2_id = sink2.id;
 
     r.add_module(smod).unwrap();
-    r.add_module(smod2).unwrap();
-    r.add_module(smod3).unwrap();
+    r.add_module(sink1).unwrap();
+    r.add_module(sink2).unwrap();
 
     let sconn1_2 = SimpleConnection {
         buf: Vec::new(),
@@ -75,13 +76,13 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         type_id: sc_type,
     };
     
-    r.connections.add_gate(smod_id, 0);
-    r.connections.add_gate(smod2_id, 0);
-    r.connections.add_gate(smod3_id, 0);
+    r.connections.add_gate(smod_id, simple_module::OUT_GATE);
+    r.connections.add_gate(s1_id, 0);
+    r.connections.add_gate(s2_id, 0);
 
-    r.connect_modules(Box::new(sconn1_2), smod_id, 0, 0, smod2_id, 0, 0)
+    r.connect_modules(Box::new(sconn1_2), smod_id, simple_module::OUT_GATE, 0, s1_id, 0, 0)
         .unwrap();
-    r.connect_modules(Box::new(sconn1_3), smod_id, 0, 1, smod3_id, 0, 0)
+    r.connect_modules(Box::new(sconn1_3), smod_id, simple_module::OUT_GATE, 1, s2_id, 0, 0)
         .unwrap();
 }
 
