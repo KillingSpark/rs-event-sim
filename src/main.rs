@@ -8,7 +8,7 @@ mod runner;
 
 use event::TimerEvent;
 use id_mngmnt::{id_registrar::IdRegistrar};
-use modules::{module::Module, simple_module::SimpleModule};
+use modules::{module::Module, simple_module::SimpleModule, sink::Sink};
 
 use clock::Clock;
 use connection::connection::ConnectionMesh;
@@ -20,6 +20,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let te_type = id_reg.register_type("TextEvent".to_owned());
     let sm_type = id_reg.register_type("SimpleModule".to_owned());
     let sc_type = id_reg.register_type("SimpleConnection".to_owned());
+    let sink_type = id_reg.register_type("SinkModule".to_owned());
     id_reg.register_type("TextSignal".to_owned());
 
     let smod = Box::new(SimpleModule {
@@ -30,20 +31,14 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         msg_time: 0,
     });
 
-    let smod2 = Box::new(SimpleModule {
+    let smod2 = Box::new( Sink{
         id: id_reg.new_id(),
-        type_id: sm_type,
-
-        msg_counter: 0,
-        msg_time: 0,
+        type_id: sink_type,
     });
     
-    let smod3 = Box::new(SimpleModule {
+    let smod3 = Box::new( Sink{
         id: id_reg.new_id(),
-        type_id: sm_type,
-
-        msg_counter: 0,
-        msg_time: 0,
+        type_id: sink_type,
     });
 
     r.add_timer_event(TimerEvent {
@@ -67,21 +62,26 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
 
     let sconn1_2 = SimpleConnection {
         buf: Vec::new(),
-        delay: 0,
+        delay: 2,
 
         id: id_reg.new_id(),
         type_id: sc_type,
     };
-    let sconn2_3 = SimpleConnection {
+    let sconn1_3 = SimpleConnection {
         buf: Vec::new(),
         delay: 1,
 
         id: id_reg.new_id(),
         type_id: sc_type,
     };
-    r.connect_modules(Box::new(sconn1_2), smod_id, 0, smod2_id)
+    
+    r.connections.add_gate(smod_id, 0);
+    r.connections.add_gate(smod2_id, 0);
+    r.connections.add_gate(smod3_id, 0);
+
+    r.connect_modules(Box::new(sconn1_2), smod_id, 0, 0, smod2_id, 0, 0)
         .unwrap();
-    r.connect_modules(Box::new(sconn2_3), smod2_id, 0, smod3_id)
+    r.connect_modules(Box::new(sconn1_3), smod_id, 0, 1, smod3_id, 0, 0)
         .unwrap();
 }
 
@@ -95,8 +95,7 @@ fn main() {
 
         connections: ConnectionMesh {
             connections: std::collections::HashMap::new(),
-            connections_in: std::collections::HashMap::new(),
-            connections_out: std::collections::HashMap::new(),
+            gates: std::collections::HashMap::new(),
 
             messages: std::collections::BinaryHeap::new(),
         },

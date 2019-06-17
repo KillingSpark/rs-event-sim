@@ -12,20 +12,14 @@ pub struct SimpleModule {
     pub msg_time: u64,
 }
 
-impl Module for SimpleModule {
-    fn handle_message(
-        &mut self,
-        _ev: &Message,
-        ctx: &mut HandleContext,
-    ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!(
-            "Module with ID: {} Wohoo message received at time!",
-            self.id
-        );
-        let ports = ctx.connections.get_ports(self.module_id());
+impl SimpleModule {
+    fn send_to_all(&mut self, ctx: &mut HandleContext) {
+        let ports = ctx.connections.get_ports(self.module_id(), 0);
+
 
         match ports {
             Some(ports) => {
+                println!("Found ports: {}", ports.len());
                 for port in ports {
                     let sig = Box::new(crate::text_message::TextMsg {
                         type_id: *ctx.id_reg.lookup_id("TextSignal".to_owned()).unwrap(),
@@ -36,12 +30,23 @@ impl Module for SimpleModule {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
                     };
-                    ctx.connections.send_message(sig, self.id, port, &mut mctx);
+                    ctx.connections.send_message(sig, self.id, 0, port, &mut mctx);
                 }
                 self.msg_counter += 1;
             }
             None => {}
         }
+    }
+}
+
+impl Module for SimpleModule {
+    fn handle_message(
+        &mut self,
+        _ev: &Message,
+        ctx: &mut HandleContext,
+    ) -> Result<HandleResult, Box<std::error::Error>> {
+        self.send_to_all(ctx);
+
         Ok(HandleResult {})
     }
 
@@ -96,26 +101,7 @@ impl Module for SimpleModule {
                 mod_id: self.module_id(),
             });
 
-            let ports = ctx.connections.get_ports(self.module_id());
-
-            match ports {
-                Some(ports) => {
-                    for port in ports {
-                        let sig = Box::new(crate::text_message::TextMsg {
-                            type_id: *ctx.id_reg.lookup_id("TextSignal".to_owned()).unwrap(),
-                            id: ctx.id_reg.new_id(),
-                            data: "Received Event".to_owned(),
-                        });
-                        let mut mctx = crate::connection::connection::HandleContext {
-                            time: ctx.time,
-                            id_reg: ctx.id_reg,
-                        };
-                        ctx.connections.send_message(sig, self.id, port, &mut mctx);
-                    }
-                    self.msg_counter += 1;
-                }
-                None => {}
-            }
+            self.send_to_all(ctx);
         }
 
         Ok(HandleResult {})

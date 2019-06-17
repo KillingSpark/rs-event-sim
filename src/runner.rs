@@ -2,6 +2,7 @@ use crate::clock::Clock;
 use crate::connection::connection::{Connection, ConnectionMesh};
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
+use crate::id_mngmnt::id_types::{ModuleId, PortId};
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
 pub struct Runner {
@@ -26,9 +27,14 @@ impl Runner {
     pub fn connect_modules(
         &mut self,
         conn: Box<Connection>,
-        mod_out: u64,
-        out_port: u64,
-        mod_in: u64,
+
+        mod_out: ModuleId,
+        gate_out: u64,
+        out_port: PortId,
+
+        mod_in: ModuleId,
+        gate_in: u64,
+        in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         //check validity of modules
         match self.modules.get(&mod_in) {
@@ -49,7 +55,7 @@ impl Runner {
 
         //handoff to connection mesh
         self.connections
-            .connect_modules(conn, mod_out, out_port, mod_in)
+            .connect_modules(conn, mod_out, gate_out, out_port, mod_in, gate_in, in_port)
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
@@ -62,9 +68,7 @@ impl Runner {
             }
             None => {}
         }
-        self.connections
-            .connections_out
-            .insert(module.module_id(), std::collections::HashMap::new());
+        self.connections.gates.insert(module.module_id(), std::collections::HashMap::new());
         self.modules.insert(module.module_id(), module);
         Ok(())
     }
@@ -190,6 +194,10 @@ impl Runner {
                     self.clock.step(time - self.clock.now());
                 }
                 None => {
+                    println!("");
+                    println!("##################");
+                    println!("");
+                    println!("No more messages nor events available. This simulation is over.");
                     break;
                 }
             }
