@@ -1,13 +1,13 @@
 
 pub struct Clock {
-    pub time: i64,
+    pub time: u64,
 }
 
 impl Clock {
-    pub fn now(&self) -> i64 {
+    pub fn now(&self) -> u64 {
         self.time
     }
-    pub fn step(&mut self, step: i64) {
+    pub fn step(&mut self, step: u64) {
         self.time += step;
     }
 }

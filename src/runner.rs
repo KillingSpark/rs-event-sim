@@ -69,49 +69,36 @@ impl Runner {
         Ok(())
     }
 
-    fn process_result(&mut self, result: HandleResult) {
-    }
+    fn process_result(&mut self, _result: HandleResult) {}
 
     //returns how many messages were found
     fn process_messages(&mut self, id_reg: &mut IdRegistrar) -> u64 {
         let mut msg_counter = 0;
-
-        let mut collected_msgs: Vec<(u64, Vec<Box<crate::messages::message::Message>>)> = Vec::new();
-
-        for (_, c) in &mut self.connections.connections {
-            let msgs = match c.pull() {
-                Ok(m) => match m {
-                    None => continue,
-                    Some(m) => m,
-                },
-                Err(_) => panic!("Error while pulling messages"),
-            };
-            collected_msgs.push((c.connection_id(), msgs));
-        }
-
-        for (conn_id, msgs) in collected_msgs {
-            for msg in msgs {
-                let recipient = self
-                    .modules
-                    .get_mut(self.connections.connections_in.get(&conn_id).unwrap())
-                    .unwrap();
-                let mut ctx = HandleContext {
-                    time: &self.clock,
-                    id_reg: id_reg,
-                    connections: &mut self.connections,
-                    timer_queue: &mut self.timer_queue,
-                };
-                let result = recipient.handle_message(msg.as_ref(), &mut ctx);
-
-                match result {
-                    Ok(res) => {
-                        self.process_result(res);
+        loop {
+            match self.connections.messages.peek() {
+                Some(tmsg) => {
+                    if tmsg.time > self.clock.now() {
+                        break;
                     }
-                    Err(_) => panic!("Buuhuu"),
                 }
-
-                msg_counter += 1;
+                None => {
+                    break;
+                }
             }
+
+            let tmsg = self.connections.messages.pop().unwrap();
+            let mut ctx = HandleContext {
+                time: &self.clock,
+                id_reg: id_reg,
+                connections: &mut self.connections,
+                timer_queue: &mut self.timer_queue,
+            };
+            self.modules
+                .get_mut(&tmsg.recipient)
+                .unwrap()
+                .handle_message(tmsg.msg.as_ref(), &mut ctx)
+                .unwrap();
+            msg_counter += 1;
         }
 
         msg_counter
@@ -160,23 +147,53 @@ impl Runner {
         Ok(events_counter)
     }
 
+    fn get_next_time_to_run(&self) -> Option<u64> {
+        let mut min = u64::max_value();
+        let mut at_least_one = false;
+        match self.timer_queue.peek() {
+            Some(ev) => {
+                if ev.time <= min {
+                    min = ev.time;
+                    at_least_one = true;
+                }
+            }
+            None => {}
+        }
+
+        match self.connections.messages.peek() {
+            Some(msg) => {
+                if msg.time <= min {
+                    min = msg.time;
+                    at_least_one = true;
+                }
+            }
+            None => {}
+        }
+        if at_least_one {
+            Some(min)
+        } else {
+            None
+        }
+    }
+
     pub fn run(
         &mut self,
         id_reg: &mut IdRegistrar,
-        endtime: i64,
+        endtime: u64,
     ) -> Result<(), Box<std::error::Error>> {
         while self.clock.now() <= endtime {
-            println!("Time: {}", self.clock.now());
-            match self.timer_queue.peek() {
-                Some(ev) => {
-                    if ev.time > self.clock.now() {
-                        self.clock.step(ev.time - self.clock.now());
+            match self.get_next_time_to_run() {
+                Some(time) => {
+                    if time < self.clock.now() {
+                        panic!("Nope");
                     }
+                    self.clock.step(time - self.clock.now());
                 }
                 None => {
-                    self.clock.step(endtime - self.clock.now() + 1);
+                    break;
                 }
             }
+            println!("Time: {}", self.clock.now());
 
             //process events and messages until no more messages are there and no more events registered for this clock time
             loop {

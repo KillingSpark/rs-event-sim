@@ -12,7 +12,7 @@ pub trait Event {
 
 
 pub struct TimerEvent {
-    pub time: i64,
+    pub time: u64,
     pub mod_id: u64,
     pub event: Box<Event>,
 }

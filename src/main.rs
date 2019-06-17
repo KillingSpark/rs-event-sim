@@ -25,7 +25,27 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let smod = Box::new(SimpleModule {
         id: id_reg.new_id(),
         type_id: sm_type,
+
+        msg_counter: 0,
+        msg_time: 0,
     });
+
+    let smod2 = Box::new(SimpleModule {
+        id: id_reg.new_id(),
+        type_id: sm_type,
+
+        msg_counter: 0,
+        msg_time: 0,
+    });
+    
+    let smod3 = Box::new(SimpleModule {
+        id: id_reg.new_id(),
+        type_id: sm_type,
+
+        msg_counter: 0,
+        msg_time: 0,
+    });
+
     r.add_timer_event(TimerEvent {
         time: 10,
         mod_id: smod.module_id(),
@@ -37,34 +57,31 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     })
     .unwrap();
 
-    let smod2 = Box::new(SimpleModule {
-        id: id_reg.new_id(),
-        type_id: sm_type,
-    });
-    r.add_timer_event(TimerEvent {
-        time: 15,
-        mod_id: smod2.module_id(),
-        event: Box::new(TextEvent {
-            type_id: te_type,
-            id: id_reg.new_id(),
-            data: "StarterEvent2".to_owned(),
-        }),
-    })
-    .unwrap();
-
     let smod_id = smod.id;
     let smod2_id = smod2.id;
+    let smod3_id = smod3.id;
 
     r.add_module(smod).unwrap();
     r.add_module(smod2).unwrap();
+    r.add_module(smod3).unwrap();
 
-    let sconn = SimpleConnection {
+    let sconn1_2 = SimpleConnection {
         buf: Vec::new(),
+        delay: 0,
 
         id: id_reg.new_id(),
         type_id: sc_type,
     };
-    r.connect_modules(Box::new(sconn), smod_id, 0, smod2_id)
+    let sconn2_3 = SimpleConnection {
+        buf: Vec::new(),
+        delay: 1,
+
+        id: id_reg.new_id(),
+        type_id: sc_type,
+    };
+    r.connect_modules(Box::new(sconn1_2), smod_id, 0, smod2_id)
+        .unwrap();
+    r.connect_modules(Box::new(sconn2_3), smod2_id, 0, smod3_id)
         .unwrap();
 }
 
@@ -80,6 +97,8 @@ fn main() {
             connections: std::collections::HashMap::new(),
             connections_in: std::collections::HashMap::new(),
             connections_out: std::collections::HashMap::new(),
+
+            messages: std::collections::BinaryHeap::new(),
         },
     };
 
