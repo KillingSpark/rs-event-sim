@@ -31,4 +31,6 @@ pub trait Module {
 
     fn module_type_id(&self) -> ModuleTypeId;
     fn module_id(&self) -> ModuleId;
+
+    fn get_gate_ids(&self) -> Vec<u64>;
 }

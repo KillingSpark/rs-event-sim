@@ -2,6 +2,7 @@ use crate::event::{Event, TimerEvent};
 use crate::events::text_event::TextEvent;
 use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId};
 use crate::messages::message::Message;
+use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
 pub struct SimpleModule {
@@ -13,6 +14,7 @@ pub struct SimpleModule {
 }
 
 pub static OUT_GATE: u64 = 0;
+pub static IN_GATE: u64 = 1;
 pub static TYPE_STR: &str = "SimpleModule";
 
 pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
@@ -38,11 +40,7 @@ impl SimpleModule {
             Some(ports) => {
                 println!("Found ports: {}", ports.len());
                 for port in ports {
-                    let sig = Box::new(crate::text_message::TextMsg {
-                        type_id: *ctx.id_reg.lookup_id("TextSignal".to_owned()).unwrap(),
-                        id: ctx.id_reg.new_id(),
-                        data: "Received Event".to_owned(),
-                    });
+                    let sig = Box::new(text_message::new_text_msg(ctx.id_reg, "Received Event".to_owned()));
                     let mut mctx = crate::connection::connection::HandleContext {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
@@ -57,6 +55,10 @@ impl SimpleModule {
 }
 
 impl Module for SimpleModule {
+    fn get_gate_ids(&self) -> Vec<u64> {
+        vec![OUT_GATE, IN_GATE]
+    }
+
     fn handle_message(
         &mut self,
         _ev: &Message,

@@ -8,7 +8,26 @@ pub struct Sink {
     pub id: ModuleId,
 }
 
+
+pub static IN_GATE: u64 = 0;
+pub static TYPE_STR: &str = "SinkModule";
+
+pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+    id_reg.register_type(TYPE_STR.to_owned());
+}
+
+pub fn new_sink(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> Sink {
+    Sink {
+        id: id_reg.new_id(),
+        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+    }
+}
+
 impl Module for Sink {
+    fn get_gate_ids(&self) -> Vec<u64> {
+        vec![IN_GATE]
+    }
+
     fn handle_message(
         &mut self,
         msg: &Message,
