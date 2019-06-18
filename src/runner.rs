@@ -88,15 +88,24 @@ impl Runner {
             }
             None => {}
         }
+        
         self.connections
             .gates
             .insert(module.module_id(), std::collections::HashMap::new());
+
+        for g in module.get_gate_ids() {
+            self.connections.add_gate(module.module_id(), g);
+        }
+
         self.modules.insert(
             match module.module_id() {
                 ModuleId(id) => id,
             },
             module,
         );
+
+        
+
         Ok(())
     }
 

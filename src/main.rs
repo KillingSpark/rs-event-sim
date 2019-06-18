@@ -19,15 +19,18 @@ use connection::simple_connection;
 use events::{event, text_event};
 use messages::text_message;
 
-fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
+fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
     sink::register(id_reg);
     text_event::register(id_reg);
     text_message::register(id_reg);
     simple_connection::register(id_reg);
+}
+
+fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
+    register_needed_types(id_reg);
 
     let smod = Box::new(simple_module::new_simple_module(id_reg));
-
     let sink1 = Box::new(sink::new_sink(id_reg));
     let sink2 = Box::new(sink::new_sink(id_reg));
 
@@ -46,15 +49,8 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(sink1).unwrap();
     r.add_module(sink2).unwrap();
 
-    let sconn1_2 = simple_connection::new_simple_connection(id_reg, 2);
-    let sconn1_3 = simple_connection::new_simple_connection(id_reg, 1);
-
-    r.connections.add_gate(smod_id, simple_module::OUT_GATE);
-    r.connections.add_gate(s1_id, sink::IN_GATE);
-    r.connections.add_gate(s2_id, sink::IN_GATE);
-
     r.connect_modules(
-        Box::new(sconn1_2),
+        Box::new(simple_connection::new_simple_connection(id_reg, 2)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
@@ -64,7 +60,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     )
     .unwrap();
     r.connect_modules(
-        Box::new(sconn1_3),
+        Box::new(simple_connection::new_simple_connection(id_reg, 1)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
@@ -76,7 +72,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
 }
 
 fn main() {
-    println!("Hello, world!");
+    println!("Starting simulation");
     let mut r = runner::Runner {
         clock: Clock { time: 0 },
 
