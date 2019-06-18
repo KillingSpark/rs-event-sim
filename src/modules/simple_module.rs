@@ -1,6 +1,6 @@
 use crate::event::{Event, TimerEvent};
 use crate::events::text_event::TextEvent;
-use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId, EventsId};
+use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
@@ -88,8 +88,8 @@ impl Module for SimpleModule {
         if self.msg_counter == 0 {
             println!(
                 "Module with Id: {} Handled timer event: {}",
-                match self.id {ModuleId(id) => id},
-                match ev.event_id() {EventsId(id) => id},
+                self.id.raw(),
+                ev.event_id().raw(),
             );
 
             if ev.event_type_id() == te_type {

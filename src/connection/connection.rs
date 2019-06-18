@@ -50,9 +50,7 @@ pub struct ConnectionMesh {
 impl ConnectionMesh {
     pub fn add_gate(&mut self, module: ModuleId, gate: GateId) {
         self.gates.get_mut(&module).unwrap().insert(
-            match gate {
-                GateId(id) => id,
-            },
+            gate.raw(),
             Gate {
                 id: gate,
                 ports: std::collections::HashMap::new(),
@@ -77,9 +75,7 @@ impl ConnectionMesh {
                 .gates
                 .get_mut(&mod_in)
                 .unwrap()
-                .get_mut(&match gate_in {
-                    GateId(id) => id,
-                })
+                .get_mut(&gate_in.raw())
                 .unwrap();
             match in_gate.ports.get(&in_port) {
                 Some(_) => {
@@ -106,9 +102,7 @@ impl ConnectionMesh {
             .gates
             .get_mut(&mod_out)
             .unwrap()
-            .get_mut(&match gate_out {
-                GateId(id) => id,
-            })
+            .get_mut(&gate_out.raw())
             .unwrap();
         match out_gate.ports.get(&out_port) {
             Some(_) => {
@@ -136,9 +130,7 @@ impl ConnectionMesh {
     }
 
     pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
-        match self.gates.get(&mod_id).unwrap().get(&match gate_id {
-            GateId(id) => id,
-        }) {
+        match self.gates.get(&mod_id).unwrap().get(&gate_id.raw()) {
             Some(gate) => Some(gate.ports.keys().map(|key_ref| *key_ref).collect()),
             None => None,
         }
@@ -156,9 +148,7 @@ impl ConnectionMesh {
             .gates
             .get(&sender_mod_id)
             .unwrap()
-            .get(&match gate_id {
-                GateId(id) => id,
-            })
+            .get(&gate_id.raw())
             .unwrap()
             .ports
             .get(&port)

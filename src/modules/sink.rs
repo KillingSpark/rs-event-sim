@@ -1,5 +1,5 @@
 use crate::event::Event;
-use crate::id_mngmnt::id_types::{EventsId, GateId, ModuleId, ModuleTypeId, PortId, MessageId};
+use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
@@ -36,12 +36,8 @@ impl Module for Sink {
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!(
             "Sink with ID: {} swallowed message with ID: {}!",
-            match self.id {
-                ModuleId(id) => id,
-            },
-            match msg.msg_id() {
-                MessageId(id) => id,
-            },
+            self.id.raw(),
+            msg.msg_id().raw(),
         );
 
         Ok(HandleResult {})
@@ -54,12 +50,8 @@ impl Module for Sink {
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!(
             "Sink with ID: {} swallowed event with ID: {}!",
-            match self.id {
-                ModuleId(id) => id,
-            },
-            match ev.event_id() {
-                EventsId(id) => id,
-            },
+            self.id.raw(),
+            ev.event_id().raw(),
         );
 
         Ok(HandleResult {})

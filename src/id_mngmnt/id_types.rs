@@ -18,3 +18,34 @@ pub struct ConnectionTypeId(pub u64);
 pub struct PortId(pub u64);
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct GateId(pub u64);
+
+
+impl ModuleId {
+    pub fn raw(&self)-> u64 {
+        match self {ModuleId(id) => *id}
+    }
+}
+
+impl EventsId {
+    pub fn raw(&self)-> u64 {
+        match self {EventsId(id) => *id}
+    }
+}
+
+impl MessageId {
+    pub fn raw(&self)-> u64 {
+        match self {MessageId(id) => *id}
+    }
+}
+
+impl GateId {
+    pub fn raw(&self)-> u64 {
+        match self {GateId(id) => *id}
+    }
+}
+
+impl ConnectionId {
+    pub fn raw(&self)-> u64 {
+        match self {ConnectionId(id) => *id}
+    }
+}
