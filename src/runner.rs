@@ -42,6 +42,8 @@ impl Runner {
         &mut self,
         conn: Box<Connection>,
 
+        con_kind: crate::connection::mesh::ConnectionKind,
+
         mod_out: ModuleId,
         gate_out: GateId,
         out_port: PortId,
@@ -75,7 +77,7 @@ impl Runner {
 
         //handoff to connection mesh
         self.connections
-            .connect_modules(conn, mod_out, gate_out, out_port, mod_in, gate_in, in_port)
+            .connect_modules(conn, con_kind, mod_out, gate_out, out_port, mod_in, gate_in, in_port)
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
@@ -130,7 +132,7 @@ impl Runner {
             self.modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
-                .handle_message(tmsg.msg.as_ref(), tmsg.recp_gate, tmsg.recp_port, &mut ctx)
+                .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
             msg_counter += 1;
         }

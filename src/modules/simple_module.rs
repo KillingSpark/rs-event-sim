@@ -64,12 +64,16 @@ impl Module for SimpleModule {
 
     fn handle_message(
         &mut self,
-        _msg: &Message,
+        msg: Box<Message>,
         _gate: GateId,
         _port: PortId,
-        ctx: &mut HandleContext,
+        _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        self.send_to_all(ctx);
+         println!(
+            "SimpleModule with ID: {} swallowed message with ID: {}!",
+            self.id.raw(),
+            msg.msg_id().raw(),
+        );
 
         Ok(HandleResult {})
     }

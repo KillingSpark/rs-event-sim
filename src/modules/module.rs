@@ -20,7 +20,7 @@ pub struct HandleResult {
 pub trait Module {
     fn handle_message(
         &mut self,
-        ev: &Message,
+        msg: Box<Message>,
         gate: GateId,
         port: PortId,
         ctx: &mut HandleContext,

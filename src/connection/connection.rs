@@ -22,6 +22,7 @@ pub trait Connection {
 pub enum PortKind {
     In,
     Out,
+    InOut,
 }
 
 #[derive(Copy, Clone)]

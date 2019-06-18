@@ -10,6 +10,7 @@ use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::PortId;
 use modules::simple_module;
 use modules::sink;
+use modules::echo_module;
 
 use connection::simple_connection;
 use events::{event, text_event};
@@ -22,41 +23,44 @@ fn register_needed_types(id_reg: &mut IdRegistrar) {
     text_event::register(id_reg);
     text_message::register(id_reg);
     simple_connection::register(id_reg);
+    echo_module::register(id_reg);
 }
 
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     register_needed_types(id_reg);
 
     let smod = Box::new(simple_module::new_simple_module(id_reg));
-    let sink1 = Box::new(sink::new_sink(id_reg));
-    let sink2 = Box::new(sink::new_sink(id_reg));
+    let sink = Box::new(sink::new_sink(id_reg));
+    let echo = Box::new(echo_module::new_echo_module(id_reg));
 
     
 
     let smod_id = smod.id;
-    let s1_id = sink1.id;
-    let s2_id = sink2.id;
+    let sink_id = sink.id;
+    let echo_id = echo.id;
 
     r.add_module(smod).unwrap();
-    r.add_module(sink1).unwrap();
-    r.add_module(sink2).unwrap();
+    r.add_module(sink).unwrap();
+    r.add_module(echo).unwrap();
 
     r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Onedirectional,
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
-        s1_id,
+        sink_id,
         sink::IN_GATE,
         PortId(0),
     )
     .unwrap();
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Bidrectional,
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
-        s2_id,
+        echo_id,
         sink::IN_GATE,
         PortId(0),
     )

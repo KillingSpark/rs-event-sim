@@ -29,7 +29,7 @@ impl Module for Sink {
 
     fn handle_message(
         &mut self,
-        msg: &Message,
+        msg: Box<Message>,
         _gate: GateId,
         _port: PortId,
         _ctx: &mut HandleContext,
