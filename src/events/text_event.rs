@@ -13,7 +13,7 @@ pub static TYPE_STR: &str = "TextEvent";
 pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
-pub fn new_text_msg(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, data: String) -> TextEvent {
+pub fn new_text_event(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, data: String) -> TextEvent {
     TextEvent {
         id: id_reg.new_event_id(),
         type_id: id_reg.lookup_event_id(TYPE_STR.to_owned()).unwrap(),

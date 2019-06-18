@@ -1,6 +1,6 @@
 use crate::event::{Event, TimerEvent};
-use crate::events::text_event::TextEvent;
-use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId};
+use crate::events::text_event::{new_text_event, TextEvent};
+use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
@@ -109,7 +109,9 @@ impl Module for SimpleModule {
             } else {
                 println!(
                     "Was {}. Dont know what to do with it though.",
-                    ctx.id_reg.lookup_event_id_reverse(ev.event_type_id()).unwrap()
+                    ctx.id_reg
+                        .lookup_event_id_reverse(ev.event_type_id())
+                        .unwrap()
                 );
             }
         }
@@ -138,4 +140,14 @@ impl Module for SimpleModule {
     fn module_id(&self) -> ModuleId {
         self.id
     }
+
+    fn initialize(&mut self, ctx: &mut HandleContext) {
+        ctx.timer_queue.push(TimerEvent {
+            time: 10,
+            mod_id: self.id,
+            event: Box::new(new_text_event(ctx.id_reg, "StarterEvent".to_owned())),
+        });
+    }
+
+    fn finalize(&mut self, _ctx: &mut HandleContext) {}
 }

@@ -36,4 +36,6 @@ pub trait Module {
     fn module_id(&self) -> ModuleId;
 
     fn get_gate_ids(&self) -> Vec<GateId>;
+    fn initialize(&mut self, ctx: &mut HandleContext);
+    fn finalize(&mut self, ctx: &mut HandleContext);
 }

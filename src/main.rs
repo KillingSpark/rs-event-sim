@@ -6,22 +6,15 @@ mod messages;
 mod modules;
 mod runner;
 
-use event::TimerEvent;
 use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::PortId;
-use modules::module::Module;
 use modules::simple_module;
 use modules::sink;
 
-use clock::Clock;
-use connection::mesh::ConnectionMesh;
 use connection::simple_connection;
 use events::{event, text_event};
 use messages::text_message;
 
-use rand::prng::XorShiftRng;
-use rand::SeedableRng;
-use rand::RngCore;
 
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
@@ -38,12 +31,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let sink1 = Box::new(sink::new_sink(id_reg));
     let sink2 = Box::new(sink::new_sink(id_reg));
 
-    r.add_timer_event(TimerEvent {
-        time: 10,
-        mod_id: smod.module_id(),
-        event: Box::new(text_event::new_text_msg(id_reg, "StarterEvent".to_owned())),
-    })
-    .unwrap();
+    
 
     let smod_id = smod.id;
     let s1_id = sink1.id;
@@ -79,21 +67,7 @@ fn main() {
     println!("Starting simulation");
     let seed:[u8; 16] = [40,157,153,238,231,98,7,241,206,84,162,233,247,101,104,215];
 
-    let mut r = runner::Runner {
-        clock: Clock { time: 0 },
-
-        modules: std::collections::HashMap::new(),
-        timer_queue: std::collections::BinaryHeap::new(),
-
-        connections: ConnectionMesh {
-            connections: std::collections::HashMap::new(),
-            gates: std::collections::HashMap::new(),
-
-            messages: std::collections::BinaryHeap::new(),
-        },
-
-        prng: XorShiftRng::from_seed(seed),
-    };
+    let mut r = runner::new_runner(seed);
 
     let mut id_reg = IdRegistrar {
         last_id: 0,

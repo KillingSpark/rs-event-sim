@@ -64,4 +64,11 @@ impl Module for Sink {
     fn module_id(&self) -> ModuleId {
         self.id
     }
+
+     fn initialize(&mut self, _ctx: &mut HandleContext) {
+
+    }
+    fn finalize(&mut self, _ctx: &mut HandleContext){
+
+    }
 }

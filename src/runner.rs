@@ -6,6 +6,9 @@ use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
+use rand::prng::XorShiftRng;
+use rand::SeedableRng;
+
 pub struct Runner {
     pub clock: Clock,
 
@@ -14,6 +17,24 @@ pub struct Runner {
 
     pub connections: ConnectionMesh,
     pub prng: rand::prng::XorShiftRng,
+}
+
+pub fn new_runner(seed: [u8; 16]) -> Runner {
+    Runner {
+        clock: Clock { time: 0 },
+
+        modules: std::collections::HashMap::new(),
+        timer_queue: std::collections::BinaryHeap::new(),
+
+        connections: ConnectionMesh {
+            connections: std::collections::HashMap::new(),
+            gates: std::collections::HashMap::new(),
+
+            messages: std::collections::BinaryHeap::new(),
+        },
+
+        prng: XorShiftRng::from_seed(seed),
+    }
 }
 
 impl Runner {
@@ -199,7 +220,35 @@ impl Runner {
         }
     }
 
-    pub fn run(
+    fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
+        let mut ctx = HandleContext {
+            time: &self.clock,
+            id_reg: id_reg,
+            connections: &mut self.connections,
+            timer_queue: &mut self.timer_queue,
+            prng: &mut self.prng,
+        };
+
+        self.modules.iter_mut().for_each(|(_, module)| {
+            module.initialize(&mut ctx);
+        });
+    }
+
+    fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
+        let mut ctx = HandleContext {
+            time: &self.clock,
+            id_reg: id_reg,
+            connections: &mut self.connections,
+            timer_queue: &mut self.timer_queue,
+            prng: &mut self.prng,
+        };
+
+        self.modules.iter_mut().for_each(|(_, module)| {
+            module.finalize(&mut ctx);
+        });
+    }
+
+    fn run_main_loop(
         &mut self,
         id_reg: &mut IdRegistrar,
         endtime: u64,
@@ -213,10 +262,6 @@ impl Runner {
                     self.clock.step(time - self.clock.now());
                 }
                 None => {
-                    println!("");
-                    println!("##################");
-                    println!("");
-                    println!("No more messages nor events available. This simulation is over.");
                     break;
                 }
             }
@@ -234,5 +279,31 @@ impl Runner {
         }
 
         Ok(())
+    }
+
+    pub fn run(
+        &mut self,
+        id_reg: &mut IdRegistrar,
+        endtime: u64,
+    ) -> Result<(), Box<std::error::Error>> {
+        println!("Initializing Modules");
+        self.init_modules(id_reg);
+
+        println!("Running main loop");
+        println!("");
+        println!("##################");
+        println!("");
+
+        let result = self.run_main_loop(id_reg, endtime);
+
+        println!("");
+        println!("##################");
+        println!("");
+        println!("No more messages nor events available. This simulation is over.");
+
+        println!("Finalizing Modules");
+        self.finalize_modules(id_reg);
+
+        result
     }
 }
