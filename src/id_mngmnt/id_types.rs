@@ -38,12 +38,6 @@ impl MessageId {
     }
 }
 
-impl GateId {
-    pub fn raw(&self)-> u64 {
-        match self {GateId(id) => *id}
-    }
-}
-
 impl ConnectionId {
     pub fn raw(&self)-> u64 {
         match self {ConnectionId(id) => *id}

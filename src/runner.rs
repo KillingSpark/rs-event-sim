@@ -38,15 +38,6 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 }
 
 impl Runner {
-    pub fn add_timer_event(&mut self, tev: TimerEvent) -> Result<(), Box<std::error::Error>> {
-        if tev.time < self.clock.now() {
-            panic!("Tried to insert event in the past")
-        }
-
-        self.timer_queue.push(tev);
-        Ok(())
-    }
-
     pub fn connect_modules(
         &mut self,
         conn: Box<Connection>,

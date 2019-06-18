@@ -79,16 +79,16 @@ impl IdRegistrar {
         }
     }
 
-    pub fn lookup_message_id_reverse(&mut self, type_id: MessageTypeId) -> Option<&String> {
-        self.lookup_id_reverse(match type_id{MessageTypeId(id) => id})
-    }
-    pub fn lookup_module_id_reverse(&mut self, type_id: ModuleTypeId) -> Option<&String> {
-       self.lookup_id_reverse(match type_id{ModuleTypeId(id) => id})
-    }
+    //pub fn lookup_message_id_reverse(&mut self, type_id: MessageTypeId) -> Option<&String> {
+    //    self.lookup_id_reverse(match type_id{MessageTypeId(id) => id})
+    //}
+    //pub fn lookup_module_id_reverse(&mut self, type_id: ModuleTypeId) -> Option<&String> {
+    //   self.lookup_id_reverse(match type_id{ModuleTypeId(id) => id})
+    //}
+    //pub fn lookup_connection_id_reverse(&mut self, type_id: ConnectionTypeId) -> Option<&String> {
+    //    self.lookup_id_reverse(match type_id{ConnectionTypeId(id) => id})
+    //}
     pub fn lookup_event_id_reverse(&mut self, type_id: EventsTypeId) -> Option<&String> {
         self.lookup_id_reverse(match type_id{EventsTypeId(id) => id})
-    }
-    pub fn lookup_connection_id_reverse(&mut self, type_id: ConnectionTypeId) -> Option<&String> {
-        self.lookup_id_reverse(match type_id{ConnectionTypeId(id) => id})
     }
 }
