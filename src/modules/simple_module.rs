@@ -37,7 +37,6 @@ impl SimpleModule {
 
         match ports {
             Some(ports) => {
-                println!("Found ports: {}", ports.len());
                 for port in ports {
                     let sig = Box::new(text_message::new_text_msg(
                         ctx.id_reg,

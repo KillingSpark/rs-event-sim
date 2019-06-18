@@ -54,7 +54,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(sink2).unwrap();
 
     r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 2, 0)),
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
@@ -64,7 +64,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     )
     .unwrap();
     r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0)),
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
