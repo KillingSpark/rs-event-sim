@@ -3,6 +3,7 @@ use crate::id_mngmnt::id_types::MessageId;
 use crate::id_mngmnt::id_types::MessageTypeId;
 use crate::id_mngmnt::id_types::ModuleId;
 use crate::id_mngmnt::id_types::PortId;
+use crate::id_mngmnt::id_types::GateId;
 
 pub trait Message {
     fn msg_type_id(&self) -> MessageTypeId;
@@ -18,7 +19,7 @@ pub struct TimedMessage {
     pub msg: Box<Message>,
     pub recipient: ModuleId,
     pub recp_port: PortId,
-    pub recp_gate: u64,
+    pub recp_gate: GateId,
 }
 
 impl Ord for TimedMessage {

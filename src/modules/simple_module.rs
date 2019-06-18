@@ -1,6 +1,6 @@
 use crate::event::{Event, TimerEvent};
 use crate::events::text_event::TextEvent;
-use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId};
+use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId, EventsId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
@@ -13,8 +13,8 @@ pub struct SimpleModule {
     pub msg_time: u64,
 }
 
-pub static OUT_GATE: u64 = 0;
-pub static IN_GATE: u64 = 1;
+pub static OUT_GATE: GateId = GateId(0);
+pub static IN_GATE: GateId = GateId(1);
 pub static TYPE_STR: &str = "SimpleModule";
 
 pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
@@ -23,8 +23,8 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
 
 pub fn new_simple_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> SimpleModule {
     SimpleModule {
-        id: id_reg.new_id(),
-        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+        id: id_reg.new_module_id(),
+        type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
 
         msg_counter: 0,
         msg_time: 0,
@@ -58,14 +58,14 @@ impl SimpleModule {
 }
 
 impl Module for SimpleModule {
-    fn get_gate_ids(&self) -> Vec<u64> {
+    fn get_gate_ids(&self) -> Vec<GateId> {
         vec![OUT_GATE, IN_GATE]
     }
 
     fn handle_message(
         &mut self,
         _msg: &Message,
-        _gate: u64,
+        _gate: GateId,
         _port: PortId,
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
@@ -84,12 +84,12 @@ impl Module for SimpleModule {
             self.msg_time = ctx.time.now();
         }
 
-        let te_type = *ctx.id_reg.lookup_id("TextEvent".to_owned()).unwrap();
+        let te_type = ctx.id_reg.lookup_event_id("TextEvent".to_owned()).unwrap();
         if self.msg_counter == 0 {
             println!(
                 "Module with Id: {} Handled timer event: {}",
-                self.id,
-                ev.event_id()
+                match self.id {ModuleId(id) => id},
+                match ev.event_id() {EventsId(id) => id},
             );
 
             if ev.event_type_id() == te_type {
@@ -99,7 +99,7 @@ impl Module for SimpleModule {
                     ctx.timer_queue.push(TimerEvent {
                         event: Box::new(TextEvent {
                             data: tev.data.clone(),
-                            id: ctx.id_reg.new_id(),
+                            id: ctx.id_reg.new_event_id(),
                             type_id: te_type,
                         }),
                         time: ctx.time.now() + 1,
@@ -109,7 +109,7 @@ impl Module for SimpleModule {
             } else {
                 println!(
                     "Was {}. Dont know what to do with it though.",
-                    ctx.id_reg.lookup_id_reverse(ev.event_type_id()).unwrap()
+                    ctx.id_reg.lookup_event_id_reverse(ev.event_type_id()).unwrap()
                 );
             }
         }
@@ -118,7 +118,7 @@ impl Module for SimpleModule {
             ctx.timer_queue.push(TimerEvent {
                 event: Box::new(TextEvent {
                     data: "just a wakeup".to_owned(),
-                    id: ctx.id_reg.new_id(),
+                    id: ctx.id_reg.new_event_id(),
                     type_id: te_type,
                 }),
                 time: ctx.time.now(),

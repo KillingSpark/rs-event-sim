@@ -2,7 +2,7 @@ use crate::clock::Clock;
 use crate::connection::connection::{Connection, ConnectionMesh};
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
-use crate::id_mngmnt::id_types::{ModuleId, PortId};
+use crate::id_mngmnt::id_types::{ConnectionId, GateId, ModuleId, PortId};
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
 pub struct Runner {
@@ -29,26 +29,42 @@ impl Runner {
         conn: Box<Connection>,
 
         mod_out: ModuleId,
-        gate_out: u64,
+        gate_out: GateId,
         out_port: PortId,
 
         mod_in: ModuleId,
-        gate_in: u64,
+        gate_in: GateId,
         in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         //check validity of modules
-        match self.modules.get(&mod_in) {
-            None => panic!("Tried to connect module that does not exist: {}", mod_in),
+        match self.modules.get(&match mod_in {
+            ModuleId(id) => id,
+        }) {
+            None => panic!(
+                "Tried to connect module that does not exist: {}",
+                match mod_in {
+                    ModuleId(id) => id,
+                }
+            ),
             Some(_) => {}
         }
-        match self.modules.get(&mod_out) {
-            None => panic!("Tried to connect module that does not exist: {}", mod_out),
+        match self.modules.get(&match mod_out {
+            ModuleId(id) => id,
+        }) {
+            None => panic!(
+                "Tried to connect module that does not exist: {}",
+                match mod_out {
+                    ModuleId(id) => id,
+                }
+            ),
             Some(_) => {}
         }
         match self.connections.connections.get(&conn.connection_id()) {
             Some(_) => panic!(
                 "Tried to insert connection: {} that already exists",
-                conn.connection_id()
+                match conn.connection_id() {
+                    ConnectionId(id) => id,
+                }
             ),
             None => {}
         }
@@ -59,17 +75,28 @@ impl Runner {
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
-        match self.modules.get(&module.module_id()) {
+        match self.modules.get(&match module.module_id() {
+            ModuleId(id) => id,
+        }) {
             Some(_) => {
                 panic!(
                     "Tried to add module with already existing module_id: {}",
-                    module.module_id()
+                    match module.module_id() {
+                        ModuleId(id) => id,
+                    }
                 );
             }
             None => {}
         }
-        self.connections.gates.insert(module.module_id(), std::collections::HashMap::new());
-        self.modules.insert(module.module_id(), module);
+        self.connections
+            .gates
+            .insert(module.module_id(), std::collections::HashMap::new());
+        self.modules.insert(
+            match module.module_id() {
+                ModuleId(id) => id,
+            },
+            module,
+        );
         Ok(())
     }
 
@@ -98,9 +125,11 @@ impl Runner {
                 timer_queue: &mut self.timer_queue,
             };
             self.modules
-                .get_mut(&tmsg.recipient)
+                .get_mut(&match tmsg.recipient {
+                    ModuleId(id) => id,
+                })
                 .unwrap()
-                .handle_message(tmsg.msg.as_ref(), tmsg.recp_port, tmsg.recp_gate, &mut ctx)
+                .handle_message(tmsg.msg.as_ref(), tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
             msg_counter += 1;
         }
@@ -124,11 +153,15 @@ impl Runner {
 
             let ev = self.timer_queue.pop().unwrap();
 
-            let module = match self.modules.get_mut(&ev.mod_id) {
+            let module = match self.modules.get_mut(&match ev.mod_id {
+                ModuleId(id) => id,
+            }) {
                 Some(m) => m,
                 None => panic!(
                     "Non existent module-ID found in a timer-event: {}",
-                    ev.mod_id
+                    match ev.mod_id {
+                        ModuleId(id) => id,
+                    },
                 ),
             };
             let mut ctx = HandleContext {

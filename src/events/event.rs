@@ -1,5 +1,5 @@
 use std::any::Any;
-use crate::id_mngmnt::id_types::{EventsId, EventsTypeId};
+use crate::id_mngmnt::id_types::{EventsId, EventsTypeId, ModuleId};
 
 pub trait Event {
     fn event_type_id(&self) -> EventsTypeId;
@@ -13,7 +13,7 @@ pub trait Event {
 
 pub struct TimerEvent {
     pub time: u64,
-    pub mod_id: u64,
+    pub mod_id: ModuleId,
     pub event: Box<Event>,
 }
 

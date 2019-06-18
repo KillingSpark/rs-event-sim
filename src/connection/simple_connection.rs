@@ -16,8 +16,8 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
 }
 pub fn new_simple_connection(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, delay: u64) -> SimpleConnection {
     SimpleConnection {
-        id: id_reg.new_id(),
-        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+        id: id_reg.new_connection_id(),
+        type_id: id_reg.lookup_connection_id(TYPE_STR.to_owned()).unwrap(),
         delay: delay,
         buf: Vec::new(),
     }

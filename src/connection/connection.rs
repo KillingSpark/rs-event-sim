@@ -1,4 +1,4 @@
-use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, ModuleId, PortId};
+use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, GateId, ModuleId, PortId};
 use crate::messages::message::{Message, TimedMessage};
 
 pub struct HandleContext<'a> {
@@ -30,12 +30,12 @@ pub struct Port {
     pub conn_id: ConnectionId,
 
     pub rcv_mod: ModuleId,
-    pub rcv_gate: u64,
+    pub rcv_gate: GateId,
     pub rcv_port: PortId,
 }
 
 pub struct Gate {
-    id: u64,
+    id: GateId,
     ports: std::collections::HashMap<PortId, Port>,
 }
 
@@ -48,11 +48,16 @@ pub struct ConnectionMesh {
 }
 
 impl ConnectionMesh {
-    pub fn add_gate(&mut self, module: ModuleId, gate: u64) {
-        self.gates.get_mut(&module).unwrap().insert(gate, Gate{
-            id: gate,
-            ports: std::collections::HashMap::new(),
-        });
+    pub fn add_gate(&mut self, module: ModuleId, gate: GateId) {
+        self.gates.get_mut(&module).unwrap().insert(
+            match gate {
+                GateId(id) => id,
+            },
+            Gate {
+                id: gate,
+                ports: std::collections::HashMap::new(),
+            },
+        );
     }
 
     pub fn connect_modules(
@@ -60,11 +65,11 @@ impl ConnectionMesh {
         conn: Box<Connection>,
 
         mod_out: ModuleId,
-        gate_out: u64,
+        gate_out: GateId,
         out_port: PortId,
 
         mod_in: ModuleId,
-        gate_in: u64,
+        gate_in: GateId,
         in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         {
@@ -72,7 +77,9 @@ impl ConnectionMesh {
                 .gates
                 .get_mut(&mod_in)
                 .unwrap()
-                .get_mut(&gate_in)
+                .get_mut(&match gate_in {
+                    GateId(id) => id,
+                })
                 .unwrap();
             match in_gate.ports.get(&in_port) {
                 Some(_) => {
@@ -88,9 +95,9 @@ impl ConnectionMesh {
                     conn_id: conn.connection_id(),
                     kind: PortKind::In,
 
-                    rcv_gate: 0,
-                    rcv_mod: 0,
-                    rcv_port: 0,
+                    rcv_gate: GateId(0),
+                    rcv_mod: ModuleId(0),
+                    rcv_port: PortId(0),
                 },
             );
         }
@@ -99,7 +106,9 @@ impl ConnectionMesh {
             .gates
             .get_mut(&mod_out)
             .unwrap()
-            .get_mut(&gate_out)
+            .get_mut(&match gate_out {
+                GateId(id) => id,
+            })
             .unwrap();
         match out_gate.ports.get(&out_port) {
             Some(_) => {
@@ -126,8 +135,10 @@ impl ConnectionMesh {
         Ok(())
     }
 
-    pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: u64) -> Option<Vec<PortId>> {
-        match self.gates.get(&mod_id).unwrap().get(&gate_id) {
+    pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
+        match self.gates.get(&mod_id).unwrap().get(&match gate_id {
+            GateId(id) => id,
+        }) {
             Some(gate) => Some(gate.ports.keys().map(|key_ref| *key_ref).collect()),
             None => None,
         }
@@ -137,7 +148,7 @@ impl ConnectionMesh {
         &mut self,
         msg: Box<Message>,
         sender_mod_id: ModuleId,
-        gate_id: u64,
+        gate_id: GateId,
         port: PortId,
         ctx: &mut HandleContext,
     ) {
@@ -145,19 +156,21 @@ impl ConnectionMesh {
             .gates
             .get(&sender_mod_id)
             .unwrap()
-            .get(&gate_id)
+            .get(&match gate_id {
+                GateId(id) => id,
+            })
             .unwrap()
             .ports
             .get(&port)
             .unwrap();
 
-        match out_port.kind  {
+        match out_port.kind {
             PortKind::In => {
                 panic!("Tried to send message over port that is not an out-going port");
             }
-            PortKind::Out => {},
+            PortKind::Out => {}
         }
-        
+
         let conn = self.connections.get_mut(&out_port.conn_id).unwrap();
 
         match conn.handle_message(msg, ctx) {

@@ -14,8 +14,8 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
 }
 pub fn new_text_msg(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, data: String) -> TextMsg {
     TextMsg {
-        id: id_reg.new_id(),
-        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+        id: id_reg.new_message_id(),
+        type_id: id_reg.lookup_message_id(TYPE_STR.to_owned()).unwrap(),
         data: data,
     }
 }

@@ -1,9 +1,20 @@
-pub type ModuleId = u64;
-pub type ModuleTypeId = u64;
-pub type EventsId = u64;
-pub type EventsTypeId = u64;
-pub type MessageId = u64;
-pub type MessageTypeId = u64;
-pub type ConnectionId = u64;
-pub type ConnectionTypeId = u64;
-pub type PortId = u64;
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleTypeId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct EventsId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct EventsTypeId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct MessageId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct MessageTypeId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ConnectionId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ConnectionTypeId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct PortId(pub u64);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct GateId(pub u64);

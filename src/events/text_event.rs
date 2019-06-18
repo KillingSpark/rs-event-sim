@@ -5,8 +5,8 @@ use crate::id_mngmnt::id_types::{EventsId, EventsTypeId};
 #[derive(Clone)]
 pub struct TextEvent {
     pub data: String,
-    pub id: u64,
-    pub type_id: u64,
+    pub id: EventsId,
+    pub type_id: EventsTypeId,
 }
 
 pub static TYPE_STR: &str = "TextEvent";
@@ -15,8 +15,8 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
 }
 pub fn new_text_msg(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, data: String) -> TextEvent {
     TextEvent {
-        id: id_reg.new_id(),
-        type_id: *id_reg.lookup_id(TYPE_STR.to_owned()).unwrap(),
+        id: id_reg.new_event_id(),
+        type_id: id_reg.lookup_event_id(TYPE_STR.to_owned()).unwrap(),
         data: data,
     }
 }
