@@ -8,7 +8,7 @@ use crate::modules::module::{HandleContext, HandleResult, Module};
 pub struct Runner {
     pub clock: Clock,
 
-    pub modules: std::collections::HashMap<u64, Box<Module>>,
+    pub modules: std::collections::HashMap<ModuleId, Box<Module>>,
     pub timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
     pub connections: ConnectionMesh,
@@ -37,14 +37,14 @@ impl Runner {
         in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         //check validity of modules
-        match self.modules.get(&mod_in.raw()) {
+        match self.modules.get(&mod_in) {
             None => panic!(
                 "Tried to connect module that does not exist: {}",
                 mod_in.raw()
             ),
             Some(_) => {}
         }
-        match self.modules.get(&mod_out.raw()) {
+        match self.modules.get(&mod_out) {
             None => panic!(
                 "Tried to connect module that does not exist: {}",
                 mod_out.raw(),
@@ -65,7 +65,7 @@ impl Runner {
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
-        match self.modules.get(&module.module_id().raw()) {
+        match self.modules.get(&module.module_id()) {
             Some(_) => {
                 panic!(
                     "Tried to add module with already existing module_id: {}",
@@ -83,7 +83,7 @@ impl Runner {
             self.connections.add_gate(module.module_id(), g);
         }
 
-        self.modules.insert(module.module_id().raw(), module);
+        self.modules.insert(module.module_id(), module);
 
         Ok(())
     }
@@ -113,7 +113,7 @@ impl Runner {
                 timer_queue: &mut self.timer_queue,
             };
             self.modules
-                .get_mut(&tmsg.recipient.raw())
+                .get_mut(&tmsg.recipient)
                 .unwrap()
                 .handle_message(tmsg.msg.as_ref(), tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
@@ -139,7 +139,7 @@ impl Runner {
 
             let ev = self.timer_queue.pop().unwrap();
 
-            let module = match self.modules.get_mut(&ev.mod_id.raw()) {
+            let module = match self.modules.get_mut(&ev.mod_id) {
                 Some(m) => m,
                 None => panic!(
                     "Non existent module-ID found in a timer-event: {}",

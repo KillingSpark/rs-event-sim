@@ -43,14 +43,14 @@ pub struct ConnectionMesh {
     //all connections are in here and are referenced in the other two maps
     pub connections: std::collections::HashMap<ConnectionId, Box<Connection>>,
 
-    pub gates: std::collections::HashMap<ModuleId, std::collections::HashMap<u64, Gate>>,
+    pub gates: std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
     pub messages: std::collections::BinaryHeap<TimedMessage>,
 }
 
 impl ConnectionMesh {
     pub fn add_gate(&mut self, module: ModuleId, gate: GateId) {
         self.gates.get_mut(&module).unwrap().insert(
-            gate.raw(),
+            gate,
             Gate {
                 id: gate,
                 ports: std::collections::HashMap::new(),
@@ -75,7 +75,7 @@ impl ConnectionMesh {
                 .gates
                 .get_mut(&mod_in)
                 .unwrap()
-                .get_mut(&gate_in.raw())
+                .get_mut(&gate_in)
                 .unwrap();
             match in_gate.ports.get(&in_port) {
                 Some(_) => {
@@ -102,7 +102,7 @@ impl ConnectionMesh {
             .gates
             .get_mut(&mod_out)
             .unwrap()
-            .get_mut(&gate_out.raw())
+            .get_mut(&gate_out)
             .unwrap();
         match out_gate.ports.get(&out_port) {
             Some(_) => {
@@ -130,7 +130,7 @@ impl ConnectionMesh {
     }
 
     pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
-        match self.gates.get(&mod_id).unwrap().get(&gate_id.raw()) {
+        match self.gates.get(&mod_id).unwrap().get(&gate_id) {
             Some(gate) => Some(gate.ports.keys().map(|key_ref| *key_ref).collect()),
             None => None,
         }
@@ -148,7 +148,7 @@ impl ConnectionMesh {
             .gates
             .get(&sender_mod_id)
             .unwrap()
-            .get(&gate_id.raw())
+            .get(&gate_id)
             .unwrap()
             .ports
             .get(&port)
