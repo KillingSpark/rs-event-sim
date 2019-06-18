@@ -14,7 +14,7 @@ use modules::simple_module;
 use modules::sink;
 
 use clock::Clock;
-use connection::connection::ConnectionMesh;
+use connection::mesh::ConnectionMesh;
 use connection::simple_connection;
 use events::{event, text_event};
 use messages::text_message;

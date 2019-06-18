@@ -1,7 +1,7 @@
 use crate::clock::Clock;
 use crate::event::{Event, TimerEvent};
 use crate::messages::message::Message;
-use crate::connection::connection::ConnectionMesh;
+use crate::connection::mesh::ConnectionMesh;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId};
 
