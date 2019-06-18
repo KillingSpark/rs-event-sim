@@ -11,6 +11,7 @@ pub struct HandleContext<'a> {
 
     pub connections: &'a mut ConnectionMesh,
     pub timer_queue: &'a mut std::collections::BinaryHeap<TimerEvent>,
+    pub prng: &'a mut rand::prng::XorShiftRng,
 }
 
 pub struct HandleResult {

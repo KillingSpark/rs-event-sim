@@ -46,6 +46,7 @@ impl SimpleModule {
                     let mut mctx = crate::connection::connection::HandleContext {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
+                        prng: ctx.prng,
                     };
                     ctx.connections
                         .send_message(sig, self.id, OUT_GATE, port, &mut mctx);

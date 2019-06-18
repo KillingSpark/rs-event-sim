@@ -4,6 +4,7 @@ use crate::messages::message::{Message};
 pub struct HandleContext<'a> {
     pub time: &'a crate::clock::Clock,
     pub id_reg: &'a crate::id_mngmnt::id_registrar::IdRegistrar,
+    pub prng: &'a mut rand::prng::XorShiftRng,
 }
 
 pub trait Connection {

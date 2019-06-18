@@ -19,6 +19,10 @@ use connection::simple_connection;
 use events::{event, text_event};
 use messages::text_message;
 
+use rand::prng::XorShiftRng;
+use rand::SeedableRng;
+use rand::RngCore;
+
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
     sink::register(id_reg);
@@ -50,7 +54,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(sink2).unwrap();
 
     r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 2)),
+        Box::new(simple_connection::new_simple_connection(id_reg, 2, 0)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
@@ -60,7 +64,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     )
     .unwrap();
     r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1)),
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0)),
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
@@ -73,6 +77,8 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
 
 fn main() {
     println!("Starting simulation");
+    let seed:[u8; 16] = [40,157,153,238,231,98,7,241,206,84,162,233,247,101,104,215];
+
     let mut r = runner::Runner {
         clock: Clock { time: 0 },
 
@@ -85,6 +91,8 @@ fn main() {
 
             messages: std::collections::BinaryHeap::new(),
         },
+
+        prng: XorShiftRng::from_seed(seed),
     };
 
     let mut id_reg = IdRegistrar {

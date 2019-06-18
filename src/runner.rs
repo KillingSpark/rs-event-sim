@@ -13,6 +13,7 @@ pub struct Runner {
     pub timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
     pub connections: ConnectionMesh,
+    pub prng: rand::prng::XorShiftRng,
 }
 
 impl Runner {
@@ -112,6 +113,7 @@ impl Runner {
                 id_reg: id_reg,
                 connections: &mut self.connections,
                 timer_queue: &mut self.timer_queue,
+                prng: &mut self.prng,
             };
             self.modules
                 .get_mut(&tmsg.recipient)
@@ -152,6 +154,7 @@ impl Runner {
                 id_reg: id_reg,
                 connections: &mut self.connections,
                 timer_queue: &mut self.timer_queue,
+                prng: &mut self.prng,
             };
 
             let result = module.handle_timer_event(ev.event.as_ref(), &mut ctx);
