@@ -1,6 +1,6 @@
 use crate::event::{Event, TimerEvent};
 use crate::events::text_event::TextEvent;
-use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId};
+use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
@@ -35,17 +35,20 @@ impl SimpleModule {
     fn send_to_all(&mut self, ctx: &mut HandleContext) {
         let ports = ctx.connections.get_ports(self.module_id(), OUT_GATE);
 
-
         match ports {
             Some(ports) => {
                 println!("Found ports: {}", ports.len());
                 for port in ports {
-                    let sig = Box::new(text_message::new_text_msg(ctx.id_reg, "Received Event".to_owned()));
+                    let sig = Box::new(text_message::new_text_msg(
+                        ctx.id_reg,
+                        "Received Event".to_owned(),
+                    ));
                     let mut mctx = crate::connection::connection::HandleContext {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
                     };
-                    ctx.connections.send_message(sig, self.id, OUT_GATE, port, &mut mctx);
+                    ctx.connections
+                        .send_message(sig, self.id, OUT_GATE, port, &mut mctx);
                 }
                 self.msg_counter += 1;
             }
@@ -61,7 +64,9 @@ impl Module for SimpleModule {
 
     fn handle_message(
         &mut self,
-        _ev: &Message,
+        _msg: &Message,
+        _gate: u64,
+        _port: PortId,
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         self.send_to_all(ctx);

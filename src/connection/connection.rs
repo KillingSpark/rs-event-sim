@@ -17,11 +17,13 @@ pub trait Connection {
     fn connection_type_id(&self) -> ConnectionTypeId;
 }
 
+#[derive(Copy, Clone)]
 pub enum PortKind {
     In,
     Out,
 }
 
+#[derive(Copy, Clone)]
 pub struct Port {
     pub id: PortId,
     pub kind: PortKind,
@@ -164,6 +166,8 @@ impl ConnectionMesh {
                     time: time,
                     msg: msg,
                     recipient: out_port.rcv_mod,
+                    recp_gate: out_port.rcv_gate,
+                    recp_port: out_port.rcv_port,
                 });
             }
             None => {}

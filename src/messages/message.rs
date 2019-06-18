@@ -2,6 +2,7 @@ use std::any::Any;
 use crate::id_mngmnt::id_types::MessageId;
 use crate::id_mngmnt::id_types::MessageTypeId;
 use crate::id_mngmnt::id_types::ModuleId;
+use crate::id_mngmnt::id_types::PortId;
 
 pub trait Message {
     fn msg_type_id(&self) -> MessageTypeId;
@@ -16,6 +17,8 @@ pub struct TimedMessage {
     pub time: u64,
     pub msg: Box<Message>,
     pub recipient: ModuleId,
+    pub recp_port: PortId,
+    pub recp_gate: u64,
 }
 
 impl Ord for TimedMessage {

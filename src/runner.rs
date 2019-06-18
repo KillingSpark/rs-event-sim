@@ -100,7 +100,7 @@ impl Runner {
             self.modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
-                .handle_message(tmsg.msg.as_ref(), &mut ctx)
+                .handle_message(tmsg.msg.as_ref(), tmsg.recp_port, tmsg.recp_gate, &mut ctx)
                 .unwrap();
             msg_counter += 1;
         }

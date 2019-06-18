@@ -1,5 +1,5 @@
 use crate::event::{Event};
-use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId};
+use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
@@ -31,6 +31,8 @@ impl Module for Sink {
     fn handle_message(
         &mut self,
         msg: &Message,
+        _port: PortId,
+        _gate: u64,
         _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!(
