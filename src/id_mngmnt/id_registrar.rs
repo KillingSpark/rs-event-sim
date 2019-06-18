@@ -17,6 +17,13 @@ impl IdRegistrar {
     }
 
     pub fn register_type(&mut self, type_id: String) -> u64 {
+        //if type is already registered just return old value. This might happen when more then one
+        //combined module type tries to register the same type
+        match self.type_ids.get(&type_id) {
+            Some(id) => return *id,
+            None => {},
+        }
+        
         let new_id = self.new_type_id();
         self.type_ids.insert(type_id.clone(), new_id);
         self.type_ids_reverse.insert(new_id, type_id);
