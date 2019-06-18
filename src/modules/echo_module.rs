@@ -1,8 +1,7 @@
 use crate::event::{Event, TimerEvent};
-use crate::events::text_event::{new_text_event, TextEvent};
+use crate::events::text_event::new_text_event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::messages::text_message;
 use crate::modules::module::{HandleContext, HandleResult, Module};
 
 pub struct EchoModule {
@@ -62,7 +61,7 @@ impl Module for EchoModule {
     fn handle_timer_event(
         &mut self,
         ev: &Event,
-        ctx: &mut HandleContext,
+        _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!(
             "EchoModule with ID: {} swallowed event with ID: {}!",
