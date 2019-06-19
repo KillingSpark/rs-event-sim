@@ -7,15 +7,16 @@ mod modules;
 mod runner;
 
 use id_mngmnt::id_registrar::IdRegistrar;
+use id_mngmnt::id_types::ModuleId;
 use id_mngmnt::id_types::PortId;
+use modules::container;
+use modules::echo_module;
 use modules::simple_module;
 use modules::sink;
-use modules::echo_module;
 
 use connection::simple_connection;
 use events::{event, text_event};
 use messages::text_message;
-
 
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
@@ -24,24 +25,60 @@ fn register_needed_types(id_reg: &mut IdRegistrar) {
     text_message::register(id_reg);
     simple_connection::register(id_reg);
     echo_module::register(id_reg);
+    container::register(id_reg);
+}
+
+fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
+    let sink = Box::new(sink::new_sink(id_reg));
+    let echo = Box::new(echo_module::new_echo_module(id_reg));
+    let group = Box::new(container::new_module_container(
+        id_reg,
+        "Container".to_owned(),
+    ));
+
+    let group_id = group.id;
+    let sink_id = sink.id;
+    let echo_id = echo.id;
+
+    r.add_module(sink).unwrap();
+    r.add_module(echo).unwrap();
+    r.add_module(group).unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Onedirectional,
+        group_id,
+        container::INNER_GATE,
+        PortId(0),
+        sink_id,
+        sink::IN_GATE,
+        PortId(0),
+    )
+    .unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Bidrectional,
+        group_id,
+        container::INNER_GATE,
+        PortId(1),
+        echo_id,
+        echo_module::IN_GATE,
+        PortId(0),
+    )
+    .unwrap();
+
+    group_id
 }
 
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     register_needed_types(id_reg);
 
     let smod = Box::new(simple_module::new_simple_module(id_reg));
-    let sink = Box::new(sink::new_sink(id_reg));
-    let echo = Box::new(echo_module::new_echo_module(id_reg));
-
-    
-
     let smod_id = smod.id;
-    let sink_id = sink.id;
-    let echo_id = echo.id;
-
     r.add_module(smod).unwrap();
-    r.add_module(sink).unwrap();
-    r.add_module(echo).unwrap();
+
+    let group_id = setup_group(r, id_reg);
 
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
@@ -49,27 +86,30 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
-        sink_id,
-        sink::IN_GATE,
+        group_id,
+        container::OUTER_GATE,
         PortId(0),
     )
     .unwrap();
+
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
         crate::connection::mesh::ConnectionKind::Bidrectional,
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
-        echo_id,
-        sink::IN_GATE,
-        PortId(0),
+        group_id,
+        container::OUTER_GATE,
+        PortId(1),
     )
     .unwrap();
 }
 
 fn main() {
     println!("Starting simulation");
-    let seed:[u8; 16] = [40,157,153,238,231,98,7,241,206,84,162,233,247,101,104,215];
+    let seed: [u8; 16] = [
+        40, 157, 153, 238, 231, 98, 7, 241, 206, 84, 162, 233, 247, 101, 104, 215,
+    ];
 
     let mut r = runner::new_runner(seed);
 
