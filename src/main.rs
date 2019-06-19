@@ -40,6 +40,10 @@ fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
     let sink_id = sink.id;
     let echo_id = echo.id;
 
+    r.set_as_top_parent(group_id);
+    r.set_as_parent(group_id, sink_id);
+    r.set_as_parent(group_id, echo_id);
+
     r.add_module(sink).unwrap();
     r.add_module(echo).unwrap();
     r.add_module(group).unwrap();
@@ -77,6 +81,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let smod = Box::new(simple_module::new_simple_module(id_reg));
     let smod_id = smod.id;
     r.add_module(smod).unwrap();
+    r.set_as_top_parent(smod_id);
 
     let group_id = setup_group(r, id_reg);
 

@@ -69,7 +69,7 @@ impl Module for SimpleModule {
         _port: PortId,
         _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-         println!(
+        println!(
             "SimpleModule with ID: {} swallowed message with ID: {}!",
             self.id.raw(),
             msg.msg_id().raw(),
@@ -153,5 +153,7 @@ impl Module for SimpleModule {
         });
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) {}
+    fn finalize(&mut self, _ctx: &mut HandleContext) {
+        println!("Finalize SimpleModule: {}", self.id.raw());
+    }
 }

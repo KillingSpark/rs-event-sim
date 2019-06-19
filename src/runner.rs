@@ -10,13 +10,16 @@ use rand::prng::XorShiftRng;
 use rand::SeedableRng;
 
 pub struct Runner {
-    pub clock: Clock,
+    clock: Clock,
 
-    pub modules: std::collections::HashMap<ModuleId, Box<Module>>,
-    pub timer_queue: std::collections::BinaryHeap<TimerEvent>,
+    modules: std::collections::HashMap<ModuleId, Box<Module>>,
+    timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
-    pub connections: ConnectionMesh,
-    pub prng: rand::prng::XorShiftRng,
+    connections: ConnectionMesh,
+    prng: rand::prng::XorShiftRng,
+
+    top_parents: Vec<ModuleId>,
+    parent_child_relations: std::collections::HashMap<ModuleId, Vec<ModuleId>>,
 }
 
 pub fn new_runner(seed: [u8; 16]) -> Runner {
@@ -34,10 +37,28 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
         },
 
         prng: XorShiftRng::from_seed(seed),
+
+        parent_child_relations: std::collections::HashMap::new(),
+        top_parents: Vec::new(),
     }
 }
 
 impl Runner {
+    pub fn set_as_parent(&mut self, parent: ModuleId, child: ModuleId) {
+        match self.parent_child_relations.get_mut(&parent) {
+            Some(children) => {
+                children.push(child);
+            }
+            None => {
+                self.parent_child_relations.insert(parent, vec![child]);
+            }
+        }
+    }
+
+    pub fn set_as_top_parent(&mut self, module: ModuleId) {
+        self.top_parents.push(module);
+    }
+
     pub fn connect_modules(
         &mut self,
         conn: Box<Connection>,
@@ -76,8 +97,9 @@ impl Runner {
         }
 
         //handoff to connection mesh
-        self.connections
-            .connect_modules(conn, con_kind, mod_out, gate_out, out_port, mod_in, gate_in, in_port)
+        self.connections.connect_modules(
+            conn, con_kind, mod_out, gate_out, out_port, mod_in, gate_in, in_port,
+        )
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
@@ -227,7 +249,25 @@ impl Runner {
         });
     }
 
-    fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
+    fn finalize_modules_rec(&mut self, module: ModuleId, id_reg: &mut IdRegistrar) {
+        let children = match self.parent_child_relations.get(&module) {
+            Some(c) => c.clone(),
+            None => {
+                let mut ctx = HandleContext {
+                    time: &self.clock,
+                    id_reg: id_reg,
+                    connections: &mut self.connections,
+                    timer_queue: &mut self.timer_queue,
+                    prng: &mut self.prng,
+                };
+                self.modules.get_mut(&module).unwrap().finalize(&mut ctx);
+                return;
+            }
+        };
+        for c in children {
+            self.finalize_modules_rec(c, id_reg);
+        }
+
         let mut ctx = HandleContext {
             time: &self.clock,
             id_reg: id_reg,
@@ -235,10 +275,14 @@ impl Runner {
             timer_queue: &mut self.timer_queue,
             prng: &mut self.prng,
         };
+        self.modules.get_mut(&module).unwrap().finalize(&mut ctx);
+    }
 
-        self.modules.iter_mut().for_each(|(_, module)| {
-            module.finalize(&mut ctx);
-        });
+    fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
+        let parents = self.top_parents.clone();
+        for p in parents {
+            self.finalize_modules_rec(p, id_reg);
+        }
     }
 
     fn run_main_loop(

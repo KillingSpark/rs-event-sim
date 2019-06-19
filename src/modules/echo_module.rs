@@ -88,5 +88,7 @@ impl Module for EchoModule {
         });
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) {}
+    fn finalize(&mut self, _ctx: &mut HandleContext) {
+        println!("Finalize Echo: {}", self.id.raw());
+    }
 }

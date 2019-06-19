@@ -90,6 +90,6 @@ impl Module for ModuleContainer {
     fn initialize(&mut self, _ctx: &mut HandleContext) {}
 
     fn finalize(&mut self, _ctx: &mut HandleContext) {
-        println!("Finalized: {}", &self.name);
+        println!("Finalized: {}, {}", &self.name, self.id.raw());
     }
 }

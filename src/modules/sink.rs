@@ -69,6 +69,6 @@ impl Module for Sink {
 
     }
     fn finalize(&mut self, _ctx: &mut HandleContext){
-
+        println!("Finalize Sink: {}", self.id.raw());
     }
 }
