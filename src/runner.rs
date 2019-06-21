@@ -49,8 +49,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 
 impl Runner {
     pub fn add_to_tree(&mut self, tree: Tree<(String, ModuleId)>) {
-        let new_top: Tree<(String, ModuleId)> =
-        match &self.module_tree {
+        let new_top: Tree<(String, ModuleId)> = match &self.module_tree {
             Tree::Node((name, id), children) => {
                 let mut new_children = Vec::new();
                 for c in children {
@@ -262,7 +261,9 @@ impl Runner {
         tree: Tree<(String, ModuleId)>,
         id_reg: &mut IdRegistrar,
     ) -> Option<FinalizeResult> {
-        let mut local_results = FinalizeResult{results: Vec::new()};
+        let mut local_results = FinalizeResult {
+            results: Vec::new(),
+        };
 
         match tree {
             Tree::Node((name, id), children) => {
@@ -294,9 +295,7 @@ impl Runner {
 
                 match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
                     Some(mut container_results) => {
-                        local_results
-                            .results
-                            .append(&mut container_results.results);
+                        local_results.results.append(&mut container_results.results);
                     }
                     None => {}
                 }
@@ -312,9 +311,7 @@ impl Runner {
 
                 match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
                     Some(mut r) => {
-                        local_results
-                            .results
-                            .append(&mut r.results);
+                        local_results.results.append(&mut r.results);
                     }
                     None => {}
                 }
@@ -330,20 +327,20 @@ impl Runner {
 
     fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut global_results = Vec::new();
+        let tree = self.module_tree.clone();
 
-        let parents = match &self.module_tree {
-            Tree::Node(_, children) => Some(children),
-            _ => None,
-        }
-        .unwrap().clone();
-
-        for p in parents {
-            match self.finalize_modules_rec(p, id_reg) {
-                Some(mut results) => {
-                    global_results.append(&mut results.results);
+        match tree {
+            Tree::Node(_, children) => {
+                for p in children {
+                    match self.finalize_modules_rec(p, id_reg) {
+                        Some(mut results) => {
+                            global_results.append(&mut results.results);
+                        }
+                        None => {}
+                    }
                 }
-                None => {}
             }
+            _ => panic!("WHUTTTTT"),
         }
 
         for (mname, fname, val) in global_results {
