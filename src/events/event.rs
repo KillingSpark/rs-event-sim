@@ -19,7 +19,11 @@ pub struct TimerEvent {
 
 impl Ord for TimerEvent {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.time.cmp(&other.time)
+        match self.time.cmp(&other.time) {
+            std::cmp::Ordering::Equal => self.event.event_id().raw().cmp(&other.event.event_id().raw()),
+            std::cmp::Ordering::Less => std::cmp::Ordering::Less,
+            std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
+        }
     }
 }
 

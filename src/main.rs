@@ -92,7 +92,9 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
-    let group_id = setup_group(r, id_reg);
+    let group_id1 = setup_group(r, id_reg);
+    let group_id2 = setup_group(r, id_reg);
+    let group_id3 = setup_group(r, id_reg);
 
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
@@ -100,7 +102,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
-        group_id,
+        group_id1,
         container::OUTER_GATE,
         PortId(0),
     )
@@ -112,7 +114,55 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
         smod_id,
         simple_module::OUT_GATE,
         PortId(1),
-        group_id,
+        group_id1,
+        container::OUTER_GATE,
+        PortId(1),
+    )
+    .unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Onedirectional,
+        smod_id,
+        simple_module::OUT_GATE,
+        PortId(2),
+        group_id2,
+        container::OUTER_GATE,
+        PortId(0),
+    )
+    .unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Bidrectional,
+        smod_id,
+        simple_module::OUT_GATE,
+        PortId(3),
+        group_id2,
+        container::OUTER_GATE,
+        PortId(1),
+    )
+    .unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Onedirectional,
+        smod_id,
+        simple_module::OUT_GATE,
+        PortId(4),
+        group_id3,
+        container::OUTER_GATE,
+        PortId(0),
+    )
+    .unwrap();
+
+    r.connect_modules(
+        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+        crate::connection::mesh::ConnectionKind::Bidrectional,
+        smod_id,
+        simple_module::OUT_GATE,
+        PortId(5),
+        group_id3,
         container::OUTER_GATE,
         PortId(1),
     )
@@ -136,5 +186,5 @@ fn main() {
 
     setup_modules(&mut r, &mut id_reg);
 
-    r.run(&mut id_reg, 2000).unwrap();
+    r.run(&mut id_reg, 20).unwrap();
 }

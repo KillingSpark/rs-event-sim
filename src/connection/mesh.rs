@@ -109,7 +109,11 @@ impl ConnectionMesh {
 
     pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
         match self.gates.get(&mod_id).unwrap().get(&gate_id) {
-            Some(gate) => Some(gate.ports.keys().map(|key_ref| *key_ref).collect()),
+            Some(gate) => {
+                let mut keys: Vec<PortId> = gate.ports.keys().map(|key_ref| *key_ref).collect();
+                keys.sort();
+                Some(keys)
+            }
             None => None,
         }
     }
@@ -136,8 +140,8 @@ impl ConnectionMesh {
             PortKind::In => {
                 panic!("Tried to send message over port that is not an out-going port");
             }
-            PortKind::Out => {/* OK */}
-            PortKind::InOut => {/* OK */}
+            PortKind::Out => { /* OK */ }
+            PortKind::InOut => { /* OK */ }
         }
 
         let conn = self.connections.get_mut(&out_port.conn_id).unwrap();

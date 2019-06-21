@@ -1,9 +1,9 @@
-use std::any::Any;
+use crate::id_mngmnt::id_types::GateId;
 use crate::id_mngmnt::id_types::MessageId;
 use crate::id_mngmnt::id_types::MessageTypeId;
 use crate::id_mngmnt::id_types::ModuleId;
 use crate::id_mngmnt::id_types::PortId;
-use crate::id_mngmnt::id_types::GateId;
+use std::any::Any;
 
 pub trait Message {
     fn msg_type_id(&self) -> MessageTypeId;
@@ -24,7 +24,11 @@ pub struct TimedMessage {
 
 impl Ord for TimedMessage {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.time.cmp(&other.time)
+        match self.time.cmp(&other.time) {
+            std::cmp::Ordering::Equal => self.msg.msg_id().raw().cmp(&other.msg.msg_id().raw()),
+            std::cmp::Ordering::Less => std::cmp::Ordering::Less,
+            std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
+        }
     }
 }
 
