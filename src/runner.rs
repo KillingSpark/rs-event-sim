@@ -20,6 +20,34 @@ struct ModuleMngr {
 }
 
 impl ModuleMngr {
+    fn finalize_modules(&mut self, tree: &Tree<(String, ModuleId)>, ctx: &mut HandleContext) {
+        let mut global_results = Vec::new();
+
+        match tree {
+            Tree::Node(_, children) => {
+                for p in children {
+                    match self.finalize_modules_rec(p, ctx) {
+                        Some(mut results) => {
+                            global_results.append(&mut results.results);
+                        }
+                        None => {}
+                    }
+                }
+            }
+            _ => panic!("WHUTTTTT"),
+        }
+
+        for (mname, fname, val) in global_results {
+            println!("{} {} {}", mname, fname, val);
+        }
+    }
+
+    fn init_modules(&mut self, ctx: &mut HandleContext) {
+        self.modules.iter_mut().for_each(|(_, module)| {
+            module.initialize(ctx);
+        });
+    }
+
     fn finalize_modules_rec(
         &mut self,
         tree: &Tree<(String, ModuleId)>,
@@ -108,6 +136,30 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 }
 
 impl Runner {
+    pub fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
+        let mut ctx = HandleContext {
+            time: &self.clock,
+            id_reg: id_reg,
+            connections: &mut self.connections,
+            timer_queue: &mut self.timer_queue,
+            prng: &mut self.prng,
+        };
+
+        self.modules.init_modules(&mut ctx);
+    }
+
+    pub fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
+        let mut ctx = HandleContext {
+            time: &self.clock,
+            id_reg: id_reg,
+            connections: &mut self.connections,
+            timer_queue: &mut self.timer_queue,
+            prng: &mut self.prng,
+        };
+
+        self.modules.finalize_modules(&self.module_tree, &mut ctx);
+    }
+
     pub fn add_to_tree(&mut self, tree: Tree<(String, ModuleId)>) {
         let new_top: Tree<(String, ModuleId)> = match &self.module_tree {
             Tree::Node((name, id), children) => {
@@ -300,52 +352,6 @@ impl Runner {
             Some(min)
         } else {
             None
-        }
-    }
-
-    fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut ctx = HandleContext {
-            time: &self.clock,
-            id_reg: id_reg,
-            connections: &mut self.connections,
-            timer_queue: &mut self.timer_queue,
-            prng: &mut self.prng,
-        };
-
-        self.modules.modules.iter_mut().for_each(|(_, module)| {
-            module.initialize(&mut ctx);
-        });
-    }
-
-    fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut global_results = Vec::new();
-
-        let tree = &self.module_tree;
-
-        let mut ctx = HandleContext {
-            time: &self.clock,
-            id_reg: id_reg,
-            connections: &mut self.connections,
-            timer_queue: &mut self.timer_queue,
-            prng: &mut self.prng,
-        };
-
-        match tree {
-            Tree::Node(_, children) => {
-                for p in children {
-                    match self.modules.finalize_modules_rec(p, &mut ctx) {
-                        Some(mut results) => {
-                            global_results.append(&mut results.results);
-                        }
-                        None => {}
-                    }
-                }
-            }
-            _ => panic!("WHUTTTTT"),
-        }
-
-        for (mname, fname, val) in global_results {
-            println!("{} {} {}", mname, fname, val);
         }
     }
 
