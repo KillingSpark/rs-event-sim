@@ -15,23 +15,83 @@ pub enum Tree<T> {
     Leaf(T),
 }
 
+struct ModuleMngr {
+    modules: std::collections::HashMap<ModuleId, Box<Module>>,
+}
+
+impl ModuleMngr {
+    fn finalize_modules_rec(
+        &mut self,
+        tree: &Tree<(String, ModuleId)>,
+        ctx: &mut HandleContext,
+    ) -> Option<FinalizeResult> {
+        let mut local_results = FinalizeResult {
+            results: Vec::new(),
+        };
+
+        match tree {
+            Tree::Node((name, id), children) => {
+                //descend then finalize
+                for c in children {
+                    match self.finalize_modules_rec(c, ctx) {
+                        Some(res) => {
+                            let mut renamed = res
+                                .results
+                                .iter()
+                                .map(|(mname, fname, val)| {
+                                    let mut new_name = name.clone();
+                                    new_name.push_str(mname);
+                                    (new_name, fname.clone(), val.clone())
+                                })
+                                .collect();
+                            local_results.results.append(&mut renamed);
+                        }
+                        None => {}
+                    }
+                }
+
+                match self.modules.get_mut(&id).unwrap().finalize(ctx) {
+                    Some(mut container_results) => {
+                        local_results.results.append(&mut container_results.results);
+                    }
+                    None => {}
+                }
+            }
+            Tree::Leaf((_, id)) => match self.modules.get_mut(&id).unwrap().finalize(ctx) {
+                Some(mut r) => {
+                    local_results.results.append(&mut r.results);
+                }
+                None => {}
+            },
+        }
+
+        if local_results.results.len() > 0 {
+            Some(local_results)
+        } else {
+            None
+        }
+    }
+}
+
 pub struct Runner {
     clock: Clock,
 
-    modules: std::collections::HashMap<ModuleId, Box<Module>>,
     timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
     connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
 
     module_tree: Tree<(String, ModuleId)>,
+    modules: ModuleMngr,
 }
 
 pub fn new_runner(seed: [u8; 16]) -> Runner {
     Runner {
         clock: Clock { time: 0 },
 
-        modules: std::collections::HashMap::new(),
+        modules: ModuleMngr {
+            modules: std::collections::HashMap::new(),
+        },
         timer_queue: std::collections::BinaryHeap::new(),
 
         connections: ConnectionMesh {
@@ -81,14 +141,14 @@ impl Runner {
         in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         //check validity of modules
-        match self.modules.get(&mod_in) {
+        match self.modules.modules.get(&mod_in) {
             None => panic!(
                 "Tried to connect module that does not exist: {}",
                 mod_in.raw()
             ),
             Some(_) => {}
         }
-        match self.modules.get(&mod_out) {
+        match self.modules.modules.get(&mod_out) {
             None => panic!(
                 "Tried to connect module that does not exist: {}",
                 mod_out.raw(),
@@ -110,7 +170,7 @@ impl Runner {
     }
 
     pub fn add_module(&mut self, module: Box<Module>) -> Result<(), Box<std::error::Error>> {
-        match self.modules.get(&module.module_id()) {
+        match self.modules.modules.get(&module.module_id()) {
             Some(_) => {
                 panic!(
                     "Tried to add module with already existing module_id: {}",
@@ -128,7 +188,7 @@ impl Runner {
             self.connections.add_gate(module.module_id(), g);
         }
 
-        self.modules.insert(module.module_id(), module);
+        self.modules.modules.insert(module.module_id(), module);
 
         Ok(())
     }
@@ -159,6 +219,7 @@ impl Runner {
                 prng: &mut self.prng,
             };
             self.modules
+                .modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
                 .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
@@ -185,7 +246,7 @@ impl Runner {
 
             let ev = self.timer_queue.pop().unwrap();
 
-            let module = match self.modules.get_mut(&ev.mod_id) {
+            let module = match self.modules.modules.get_mut(&ev.mod_id) {
                 Some(m) => m,
                 None => panic!(
                     "Non existent module-ID found in a timer-event: {}",
@@ -251,88 +312,28 @@ impl Runner {
             prng: &mut self.prng,
         };
 
-        self.modules.iter_mut().for_each(|(_, module)| {
+        self.modules.modules.iter_mut().for_each(|(_, module)| {
             module.initialize(&mut ctx);
         });
     }
 
-    fn finalize_modules_rec(
-        &mut self,
-        tree: Tree<(String, ModuleId)>,
-        id_reg: &mut IdRegistrar,
-    ) -> Option<FinalizeResult> {
-        let mut local_results = FinalizeResult {
-            results: Vec::new(),
-        };
-
-        match tree {
-            Tree::Node((name, id), children) => {
-                //descend then finalize
-                for c in children {
-                    match self.finalize_modules_rec(c, id_reg) {
-                        Some(res) => {
-                            let mut renamed = res
-                                .results
-                                .iter()
-                                .map(|(mname, fname, val)| {
-                                    let mut new_name = name.clone();
-                                    new_name.push_str(mname);
-                                    (new_name, fname.clone(), val.clone())
-                                })
-                                .collect();
-                            local_results.results.append(&mut renamed);
-                        }
-                        None => {}
-                    }
-                }
-                let mut ctx = HandleContext {
-                    time: &self.clock,
-                    id_reg: id_reg,
-                    connections: &mut self.connections,
-                    timer_queue: &mut self.timer_queue,
-                    prng: &mut self.prng,
-                };
-
-                match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
-                    Some(mut container_results) => {
-                        local_results.results.append(&mut container_results.results);
-                    }
-                    None => {}
-                }
-            }
-            Tree::Leaf((_, id)) => {
-                let mut ctx = HandleContext {
-                    time: &self.clock,
-                    id_reg: id_reg,
-                    connections: &mut self.connections,
-                    timer_queue: &mut self.timer_queue,
-                    prng: &mut self.prng,
-                };
-
-                match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
-                    Some(mut r) => {
-                        local_results.results.append(&mut r.results);
-                    }
-                    None => {}
-                }
-            }
-        }
-
-        if local_results.results.len() > 0 {
-            Some(local_results)
-        } else {
-            None
-        }
-    }
-
     fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut global_results = Vec::new();
-        let tree = self.module_tree.clone();
+
+        let tree = &self.module_tree;
+
+        let mut ctx = HandleContext {
+            time: &self.clock,
+            id_reg: id_reg,
+            connections: &mut self.connections,
+            timer_queue: &mut self.timer_queue,
+            prng: &mut self.prng,
+        };
 
         match tree {
             Tree::Node(_, children) => {
                 for p in children {
-                    match self.finalize_modules_rec(p, id_reg) {
+                    match self.modules.finalize_modules_rec(p, &mut ctx) {
                         Some(mut results) => {
                             global_results.append(&mut results.results);
                         }
