@@ -96,77 +96,34 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let group_id2 = setup_group(r, id_reg);
     let group_id3 = setup_group(r, id_reg);
 
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Onedirectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(0),
-        group_id1,
-        container::OUTER_GATE,
-        PortId(0),
-    )
-    .unwrap();
+    let mut idx = 0;
+    for group in vec![group_id1, group_id2, group_id3] {
+        r.connect_modules(
+            Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+            crate::connection::mesh::ConnectionKind::Onedirectional,
+            smod_id,
+            simple_module::OUT_GATE,
+            PortId(idx),
+            group,
+            container::OUTER_GATE,
+            PortId(0),
+        )
+        .unwrap();
 
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Bidrectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(1),
-        group_id1,
-        container::OUTER_GATE,
-        PortId(1),
-    )
-    .unwrap();
+        r.connect_modules(
+            Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+            crate::connection::mesh::ConnectionKind::Bidrectional,
+            smod_id,
+            simple_module::OUT_GATE,
+            PortId(idx + 1),
+            group,
+            container::OUTER_GATE,
+            PortId(1),
+        )
+        .unwrap();
 
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Onedirectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(2),
-        group_id2,
-        container::OUTER_GATE,
-        PortId(0),
-    )
-    .unwrap();
-
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Bidrectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(3),
-        group_id2,
-        container::OUTER_GATE,
-        PortId(1),
-    )
-    .unwrap();
-
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Onedirectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(4),
-        group_id3,
-        container::OUTER_GATE,
-        PortId(0),
-    )
-    .unwrap();
-
-    r.connect_modules(
-        Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Bidrectional,
-        smod_id,
-        simple_module::OUT_GATE,
-        PortId(5),
-        group_id3,
-        container::OUTER_GATE,
-        PortId(1),
-    )
-    .unwrap();
+        idx += 2;
+    }
 }
 
 fn main() {
