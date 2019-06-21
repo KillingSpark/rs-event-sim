@@ -29,8 +29,8 @@ fn register_needed_types(id_reg: &mut IdRegistrar) {
 }
 
 fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
-    let sink = Box::new(sink::new_sink(id_reg));
-    let echo = Box::new(echo_module::new_echo_module(id_reg));
+    let sink = Box::new(sink::new_sink(id_reg, "Sink".to_owned()));
+    let echo = Box::new(echo_module::new_echo_module(id_reg, "Echo".to_owned()));
     let group = Box::new(container::new_module_container(
         id_reg,
         "Container".to_owned(),
@@ -40,9 +40,15 @@ fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
     let sink_id = sink.id;
     let echo_id = echo.id;
 
-    r.set_as_top_parent(group_id);
-    r.set_as_parent(group_id, sink_id);
-    r.set_as_parent(group_id, echo_id);
+    let tree = runner::Tree::Node(
+        ("Group".to_owned(), group_id),
+        vec![
+            runner::Tree::Leaf(("Echo".to_owned(), echo_id)),
+            runner::Tree::Leaf(("Sink".to_owned(), sink_id)),
+        ],
+    );
+
+    r.add_to_tree(tree);
 
     r.add_module(sink).unwrap();
     r.add_module(echo).unwrap();
@@ -78,10 +84,13 @@ fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
 fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     register_needed_types(id_reg);
 
-    let smod = Box::new(simple_module::new_simple_module(id_reg));
+    let smod = Box::new(simple_module::new_simple_module(
+        id_reg,
+        "Source".to_owned(),
+    ));
     let smod_id = smod.id;
     r.add_module(smod).unwrap();
-    r.set_as_top_parent(smod_id);
+    r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
     let group_id = setup_group(r, id_reg);
 
@@ -127,5 +136,5 @@ fn main() {
 
     setup_modules(&mut r, &mut id_reg);
 
-    r.run(&mut id_reg, 200).unwrap();
+    r.run(&mut id_reg, 2000).unwrap();
 }

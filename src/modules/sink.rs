@@ -1,11 +1,14 @@
 use crate::event::Event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
 
 pub struct Sink {
     pub type_id: ModuleTypeId,
     pub id: ModuleId,
+    pub name: String,
+
+    messages_sunk: u64,
 }
 
 pub static IN_GATE: GateId = GateId(0);
@@ -15,10 +18,13 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_sink(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> Sink {
+pub fn new_sink(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, name: String) -> Sink {
     Sink {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
+        name: name,
+
+        messages_sunk: 0,
     }
 }
 
@@ -39,6 +45,7 @@ impl Module for Sink {
             self.id.raw(),
             msg.msg_id().raw(),
         );
+        self.messages_sunk += 1;
 
         Ok(HandleResult {})
     }
@@ -65,10 +72,17 @@ impl Module for Sink {
         self.id
     }
 
-     fn initialize(&mut self, _ctx: &mut HandleContext) {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn initialize(&mut self, _ctx: &mut HandleContext) {
 
     }
-    fn finalize(&mut self, _ctx: &mut HandleContext){
+    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult>{
         println!("Finalize Sink: {}", self.id.raw());
+        Some(FinalizeResult{
+            results: vec![(self.name(), "sunk_msgs".to_owned(), self.messages_sunk.to_string())]
+        })
     }
 }

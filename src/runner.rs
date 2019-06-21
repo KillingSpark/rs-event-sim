@@ -4,10 +4,16 @@ use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
-use crate::modules::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
+
+#[derive(Clone)]
+pub enum Tree<T> {
+    Node(T, Vec<Tree<T>>),
+    Leaf(T),
+}
 
 pub struct Runner {
     clock: Clock,
@@ -18,8 +24,7 @@ pub struct Runner {
     connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
 
-    top_parents: Vec<ModuleId>,
-    parent_child_relations: std::collections::HashMap<ModuleId, Vec<ModuleId>>,
+    module_tree: Tree<(String, ModuleId)>,
 }
 
 pub fn new_runner(seed: [u8; 16]) -> Runner {
@@ -38,25 +43,28 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 
         prng: XorShiftRng::from_seed(seed),
 
-        parent_child_relations: std::collections::HashMap::new(),
-        top_parents: Vec::new(),
+        module_tree: Tree::Node(("Top".to_owned(), ModuleId(0)), Vec::new()),
     }
 }
 
 impl Runner {
-    pub fn set_as_parent(&mut self, parent: ModuleId, child: ModuleId) {
-        match self.parent_child_relations.get_mut(&parent) {
-            Some(children) => {
-                children.push(child);
-            }
-            None => {
-                self.parent_child_relations.insert(parent, vec![child]);
-            }
-        }
-    }
+    pub fn add_to_tree(&mut self, tree: Tree<(String, ModuleId)>) {
+        let new_top: Tree<(String, ModuleId)> =
+        match &self.module_tree {
+            Tree::Node((name, id), children) => {
+                let mut new_children = Vec::new();
+                for c in children {
+                    new_children.push(c.clone());
+                }
+                new_children.push(tree);
 
-    pub fn set_as_top_parent(&mut self, module: ModuleId) {
-        self.top_parents.push(module);
+                Tree::Node((name.clone(), *id), new_children)
+            }
+            Tree::Leaf(_) => {
+                panic!("WHUUUUT");
+            }
+        };
+        self.module_tree = new_top;
     }
 
     pub fn connect_modules(
@@ -249,10 +257,33 @@ impl Runner {
         });
     }
 
-    fn finalize_modules_rec(&mut self, module: ModuleId, id_reg: &mut IdRegistrar) {
-        let children = match self.parent_child_relations.get(&module) {
-            Some(c) => c.clone(),
-            None => {
+    fn finalize_modules_rec(
+        &mut self,
+        tree: Tree<(String, ModuleId)>,
+        id_reg: &mut IdRegistrar,
+    ) -> Option<FinalizeResult> {
+        let mut local_results = FinalizeResult{results: Vec::new()};
+
+        match tree {
+            Tree::Node((name, id), children) => {
+                //descend then finalize
+                for c in children {
+                    match self.finalize_modules_rec(c, id_reg) {
+                        Some(res) => {
+                            let mut renamed = res
+                                .results
+                                .iter()
+                                .map(|(mname, fname, val)| {
+                                    let mut new_name = name.clone();
+                                    new_name.push_str(mname);
+                                    (new_name, fname.clone(), val.clone())
+                                })
+                                .collect();
+                            local_results.results.append(&mut renamed);
+                        }
+                        None => {}
+                    }
+                }
                 let mut ctx = HandleContext {
                     time: &self.clock,
                     id_reg: id_reg,
@@ -260,28 +291,63 @@ impl Runner {
                     timer_queue: &mut self.timer_queue,
                     prng: &mut self.prng,
                 };
-                self.modules.get_mut(&module).unwrap().finalize(&mut ctx);
-                return;
+
+                match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
+                    Some(mut container_results) => {
+                        local_results
+                            .results
+                            .append(&mut container_results.results);
+                    }
+                    None => {}
+                }
             }
-        };
-        for c in children {
-            self.finalize_modules_rec(c, id_reg);
+            Tree::Leaf((_, id)) => {
+                let mut ctx = HandleContext {
+                    time: &self.clock,
+                    id_reg: id_reg,
+                    connections: &mut self.connections,
+                    timer_queue: &mut self.timer_queue,
+                    prng: &mut self.prng,
+                };
+
+                match self.modules.get_mut(&id).unwrap().finalize(&mut ctx) {
+                    Some(mut r) => {
+                        local_results
+                            .results
+                            .append(&mut r.results);
+                    }
+                    None => {}
+                }
+            }
         }
 
-        let mut ctx = HandleContext {
-            time: &self.clock,
-            id_reg: id_reg,
-            connections: &mut self.connections,
-            timer_queue: &mut self.timer_queue,
-            prng: &mut self.prng,
-        };
-        self.modules.get_mut(&module).unwrap().finalize(&mut ctx);
+        if local_results.results.len() > 0 {
+            Some(local_results)
+        } else {
+            None
+        }
     }
 
     fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let parents = self.top_parents.clone();
+        let mut global_results = Vec::new();
+
+        let parents = match &self.module_tree {
+            Tree::Node(_, children) => Some(children),
+            _ => None,
+        }
+        .unwrap().clone();
+
         for p in parents {
-            self.finalize_modules_rec(p, id_reg);
+            match self.finalize_modules_rec(p, id_reg) {
+                Some(mut results) => {
+                    global_results.append(&mut results.results);
+                }
+                None => {}
+            }
+        }
+
+        for (mname, fname, val) in global_results {
+            println!("{} {} {}", mname, fname, val);
         }
     }
 

@@ -3,14 +3,17 @@ use crate::events::text_event::{new_text_event, TextEvent};
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
-use crate::modules::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
 pub struct SimpleModule {
     pub type_id: ModuleTypeId,
     pub id: ModuleId,
+    pub name: String,
 
     pub msg_counter: u64,
     pub msg_time: u64,
+
+    pub messages_sent: u64,
 }
 
 pub static OUT_GATE: GateId = GateId(0);
@@ -21,13 +24,19 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_simple_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> SimpleModule {
+pub fn new_simple_module(
+    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    name: String,
+) -> SimpleModule {
     SimpleModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
+        name: name,
 
         msg_counter: 0,
         msg_time: 0,
+
+        messages_sent: 0,
     }
 }
 
@@ -49,6 +58,7 @@ impl SimpleModule {
                     };
                     ctx.connections
                         .send_message(sig, self.id, OUT_GATE, port, &mut mctx);
+                    self.messages_sent += 1;
                 }
                 self.msg_counter += 1;
             }
@@ -99,17 +109,15 @@ impl Module for SimpleModule {
             if ev.event_type_id() == te_type {
                 let tev: &TextEvent = ev.as_any().downcast_ref::<TextEvent>().unwrap();
                 println!("Was Textevent with data: {}", tev.data);
-                if ctx.time.now() < 16 {
-                    ctx.timer_queue.push(TimerEvent {
-                        event: Box::new(TextEvent {
-                            data: tev.data.clone(),
-                            id: ctx.id_reg.new_event_id(),
-                            type_id: te_type,
-                        }),
-                        time: ctx.time.now() + 1,
-                        mod_id: self.module_id(),
-                    });
-                }
+                ctx.timer_queue.push(TimerEvent {
+                    event: Box::new(TextEvent {
+                        data: tev.data.clone(),
+                        id: ctx.id_reg.new_event_id(),
+                        type_id: te_type,
+                    }),
+                    time: ctx.time.now() + 1,
+                    mod_id: self.module_id(),
+                });
             } else {
                 println!(
                     "Was {}. Dont know what to do with it though.",
@@ -145,6 +153,10 @@ impl Module for SimpleModule {
         self.id
     }
 
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
     fn initialize(&mut self, ctx: &mut HandleContext) {
         ctx.timer_queue.push(TimerEvent {
             time: 10,
@@ -153,7 +165,14 @@ impl Module for SimpleModule {
         });
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) {
+    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalize SimpleModule: {}", self.id.raw());
+        Some(FinalizeResult {
+            results: vec![(
+                self.name(),
+                "sent_msgs".to_owned(),
+                self.messages_sent.to_string(),
+            )],
+        })
     }
 }

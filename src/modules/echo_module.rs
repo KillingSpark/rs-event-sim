@@ -2,14 +2,14 @@ use crate::event::{Event, TimerEvent};
 use crate::events::text_event::new_text_event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
     pub id: ModuleId,
+    pub name: String,
 
-    pub msg_counter: u64,
-    pub msg_time: u64,
+    msgs_echoed: u64,
 }
 
 pub static OUT_GATE: GateId = GateId(0);
@@ -20,13 +20,13 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_echo_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) -> EchoModule {
+pub fn new_echo_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, name: String) -> EchoModule {
     EchoModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
+        name: name,
 
-        msg_counter: 0,
-        msg_time: 0,
+        msgs_echoed: 0,
     }
 }
 
@@ -54,6 +54,7 @@ impl Module for EchoModule {
         };
         ctx.connections
             .send_message(msg, self.id, gate, port, &mut mctx);
+        self.msgs_echoed +=1;
 
         Ok(HandleResult {})
     }
@@ -80,6 +81,10 @@ impl Module for EchoModule {
         self.id
     }
 
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
     fn initialize(&mut self, ctx: &mut HandleContext) {
         ctx.timer_queue.push(TimerEvent {
             time: 10,
@@ -88,7 +93,10 @@ impl Module for EchoModule {
         });
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) {
+    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalize Echo: {}", self.id.raw());
+        Some(FinalizeResult{
+            results: vec![(self.name(), "echoed_msgs".to_owned(), self.msgs_echoed.to_string())]
+        })
     }
 }

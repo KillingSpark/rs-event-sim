@@ -17,6 +17,11 @@ pub struct HandleContext<'a> {
 pub struct HandleResult {
 }
 
+pub struct FinalizeResult {
+    //module-name, field-name, value 
+    pub results: Vec<(String, String, String)>,
+}
+
 pub trait Module {
     fn handle_message(
         &mut self,
@@ -34,8 +39,9 @@ pub trait Module {
 
     fn module_type_id(&self) -> ModuleTypeId;
     fn module_id(&self) -> ModuleId;
+    fn name(&self) -> String;
 
     fn get_gate_ids(&self) -> Vec<GateId>;
     fn initialize(&mut self, ctx: &mut HandleContext);
-    fn finalize(&mut self, ctx: &mut HandleContext);
+    fn finalize(&mut self, ctx: &mut HandleContext) -> Option<FinalizeResult>;
 }

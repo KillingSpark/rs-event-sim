@@ -1,7 +1,7 @@
 use crate::event::Event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{HandleContext, HandleResult, Module};
+use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
 
 pub struct ModuleContainer {
     pub type_id: ModuleTypeId,
@@ -60,6 +60,10 @@ impl Module for ModuleContainer {
         vec![OUTER_GATE, INNER_GATE]
     }
 
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
     fn handle_message(
         &mut self,
         msg: Box<Message>,
@@ -89,7 +93,8 @@ impl Module for ModuleContainer {
 
     fn initialize(&mut self, _ctx: &mut HandleContext) {}
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) {
+    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult>{
         println!("Finalized: {}, {}", &self.name, self.id.raw());
+        None
     }
 }
