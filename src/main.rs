@@ -92,12 +92,15 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
-    let group_id1 = setup_group(r, id_reg);
-    let group_id2 = setup_group(r, id_reg);
-    let group_id3 = setup_group(r, id_reg);
+    let mut groups = Vec::new();
+
+    for i in 0..100 {
+        groups.push(setup_group(r, id_reg));
+        if i % 100 == 0 {println!("{}", i)}; 
+    }
 
     let mut idx = 0;
-    for group in vec![group_id1, group_id2, group_id3] {
+    for group in groups {
         r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
             crate::connection::mesh::ConnectionKind::Onedirectional,
@@ -143,5 +146,5 @@ fn main() {
 
     setup_modules(&mut r, &mut id_reg);
 
-    r.run(&mut id_reg, 20).unwrap();
+    r.run(&mut id_reg, 500).unwrap();
 }

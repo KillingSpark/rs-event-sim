@@ -1,4 +1,4 @@
-use crate::clock::Clock;
+use crate::clock;
 use crate::connection::connection::Connection;
 use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
@@ -37,9 +37,9 @@ impl ModuleMngr {
             _ => panic!("WHUTTTTT"),
         }
 
-        for (mname, fname, val) in global_results {
-            println!("{} {} {}", mname, fname, val);
-        }
+        //for (mname, fname, val) in global_results {
+        //    println!("{} {} {}", mname, fname, val);
+        //}
     }
 
     fn init_modules(&mut self, ctx: &mut HandleContext) {
@@ -102,20 +102,20 @@ impl ModuleMngr {
 }
 
 pub struct Runner {
-    clock: Clock,
+    clock: clock::Clock,
 
     timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
     connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
 
-    module_tree: Tree<(String, ModuleId)>,
+    module_forest: Vec<Tree<(String, ModuleId)>>,
     modules: ModuleMngr,
 }
 
 pub fn new_runner(seed: [u8; 16]) -> Runner {
     Runner {
-        clock: Clock { time: 0 },
+        clock: clock::new(),
 
         modules: ModuleMngr {
             modules: std::collections::HashMap::new(),
@@ -131,7 +131,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 
         prng: XorShiftRng::from_seed(seed),
 
-        module_tree: Tree::Node(("Top".to_owned(), ModuleId(0)), Vec::new()),
+        module_forest: Vec::new(),
     }
 }
 
@@ -157,25 +157,14 @@ impl Runner {
             prng: &mut self.prng,
         };
 
-        self.modules.finalize_modules(&self.module_tree, &mut ctx);
+        self.modules.finalize_modules(
+            &Tree::Node(("Top".to_owned(), ModuleId(0)), self.module_forest.clone()),
+            &mut ctx,
+        );
     }
 
     pub fn add_to_tree(&mut self, tree: Tree<(String, ModuleId)>) {
-        let new_top: Tree<(String, ModuleId)> = match &self.module_tree {
-            Tree::Node((name, id), children) => {
-                let mut new_children = Vec::new();
-                for c in children {
-                    new_children.push(c.clone());
-                }
-                new_children.push(tree);
-
-                Tree::Node((name.clone(), *id), new_children)
-            }
-            Tree::Leaf(_) => {
-                panic!("WHUUUUT");
-            }
-        };
-        self.module_tree = new_top;
+        self.module_forest.push(tree);
     }
 
     pub fn connect_modules(
@@ -366,7 +355,7 @@ impl Runner {
                     if time < self.clock.now() {
                         panic!("Nope");
                     }
-                    self.clock.step(time - self.clock.now());
+                    self.clock.set(time).unwrap();
                 }
                 None => {
                     break;

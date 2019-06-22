@@ -1,5 +1,4 @@
-use crate::event::{Event, TimerEvent};
-use crate::events::text_event::new_text_event;
+use crate::event::{Event};
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
@@ -42,11 +41,11 @@ impl Module for EchoModule {
         port: PortId,
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!(
-            "EchoModule with ID: {} echoed message with ID: {}!",
-            self.id.raw(),
-            msg.msg_id().raw(),
-        );
+        //println!(
+        //    "EchoModule with ID: {} echoed message with ID: {}!",
+        //    self.id.raw(),
+        //    msg.msg_id().raw(),
+        //);
         let mut mctx = crate::connection::connection::HandleContext {
             time: ctx.time,
             id_reg: ctx.id_reg,
@@ -85,12 +84,7 @@ impl Module for EchoModule {
         self.name.clone()
     }
 
-    fn initialize(&mut self, ctx: &mut HandleContext) {
-        ctx.timer_queue.push(TimerEvent {
-            time: 10,
-            mod_id: self.id,
-            event: Box::new(new_text_event(ctx.id_reg, "StarterEvent".to_owned())),
-        });
+    fn initialize(&mut self, _ctx: &mut HandleContext) {
     }
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {

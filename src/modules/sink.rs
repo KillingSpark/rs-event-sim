@@ -35,16 +35,16 @@ impl Module for Sink {
 
     fn handle_message(
         &mut self,
-        msg: Box<Message>,
+        _msg: Box<Message>,
         _gate: GateId,
         _port: PortId,
         _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!(
-            "Sink with ID: {} swallowed message with ID: {}!",
-            self.id.raw(),
-            msg.msg_id().raw(),
-        );
+        //println!(
+        //    "Sink with ID: {} swallowed message with ID: {}!",
+        //    self.id.raw(),
+        //    msg.msg_id().raw(),
+        //);
         self.messages_sunk += 1;
 
         Ok(HandleResult {})
@@ -52,14 +52,14 @@ impl Module for Sink {
 
     fn handle_timer_event(
         &mut self,
-        ev: &Event,
+        _ev: &Event,
         _ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!(
-            "Sink with ID: {} swallowed event with ID: {}!",
-            self.id.raw(),
-            ev.event_id().raw(),
-        );
+        //println!(
+        //    "Sink with ID: {} swallowed event with ID: {}!",
+        //    self.id.raw(),
+        //    ev.event_id().raw(),
+        //);
 
         Ok(HandleResult {})
     }
