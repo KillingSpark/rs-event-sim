@@ -100,15 +100,14 @@ impl Module for SimpleModule {
 
         let te_type = ctx.id_reg.lookup_event_id("TextEvent".to_owned()).unwrap();
         if self.msg_counter == 0 {
-            println!(
-                "Module with Id: {} Handled timer event: {}",
-                self.id.raw(),
-                ev.event_id().raw(),
-            );
+            //println!(
+            //    "Module with Id: {} Handled timer event: {}",
+            //    self.id.raw(),
+            //    ev.event_id().raw(),
+            //);
 
             if ev.event_type_id() == te_type {
                 let tev: &TextEvent = ev.as_any().downcast_ref::<TextEvent>().unwrap();
-                println!("Was Textevent with data: {}", tev.data);
                 ctx.timer_queue.push(TimerEvent {
                     event: Box::new(TextEvent {
                         data: tev.data.clone(),

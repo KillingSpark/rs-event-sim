@@ -4,7 +4,7 @@ use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module}; 
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
@@ -352,6 +352,13 @@ impl Runner {
         id_reg: &mut IdRegistrar,
         endtime: u64,
     ) -> Result<(), Box<std::error::Error>> {
+        let mut percentage_time_passed = 0;
+        let mut msgs_processed_total = 0;
+        let mut msgs_processed = 0;
+        let mut events_processed_total = 0;
+        let mut events_processed = 0;
+        let mut time = std::time::Instant::now();
+
         while self.clock.now() <= endtime {
             match self.get_next_time_to_run() {
                 Some(time) => {
@@ -364,13 +371,33 @@ impl Runner {
                     break;
                 }
             }
-            println!("Time: {}", self.clock.now());
+            if 100 * self.clock.now() / endtime > percentage_time_passed {
+                percentage_time_passed = 100 * self.clock.now() / endtime;
+                println!("Time: {}, {}%", self.clock.now(), percentage_time_passed);
+                println!("Msgs: {}, Events: {}", msgs_processed_total, events_processed_total);
+
+                let secs = std::time::Instant::now().duration_since(time).as_secs();
+                println!("Real seconds passed: {}", secs);
+                if secs > 0 {
+                    println!("Msgs/s: {}, Events/s: {}", msgs_processed/secs, events_processed/secs);
+                    msgs_processed = 0;
+                    events_processed = 0;
+                }
+
+                println!("Msgs in queue: {}, Events in queue: {}", self.connections.messages.len(), self.timer_queue.len());
+            }
 
             //process events and messages until no more messages are there and no more events registered for this clock time
+            
             loop {
-                let mut x = 0;
-                x += self.process_events(id_reg).unwrap();
-                x += self.process_messages(id_reg);
+                let evs = self.process_events(id_reg).unwrap();
+                let msgs = self.process_messages(id_reg);
+
+                let x = evs+msgs;
+                events_processed_total += evs;
+                events_processed += evs;
+                msgs_processed_total += msgs;
+                msgs_processed += msgs;
                 if x == 0 {
                     break;
                 }
@@ -417,7 +444,7 @@ impl Runner {
             for (gate_id, gate) in gates {
                 for (port_id, port) in &gate.ports {
                     match port.kind {
-                        crate::connection::connection::PortKind::In => {/*ignore */}
+                        crate::connection::connection::PortKind::In => { /*ignore */ }
                         _ => {
                             target.write(
                                 format!(

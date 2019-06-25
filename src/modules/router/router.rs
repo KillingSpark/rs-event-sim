@@ -175,10 +175,10 @@ impl Module for Router {
                         .send_message(sig, self.id, TRIG_GATE, *out_port, &mut mctx);
                 }
                 None => {
-                    println!(
-                        "Router: {} Didnt know where to send message on port: {}",
-                        &self.name, port.0
-                    );
+                    //println!(
+                    //    "Router: {} Didnt know where to send message on port: {}",
+                    //    &self.name, port.0
+                    //);
                 }
             },
             OUT_GATE => panic!("Should never receive message on OUT_GATE"),

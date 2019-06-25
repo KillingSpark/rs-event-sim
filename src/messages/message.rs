@@ -24,17 +24,18 @@ pub struct TimedMessage {
 
 impl Ord for TimedMessage {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        //reverse so maxqueue takes event with smaller time 
         match self.time.cmp(&other.time) {
-            std::cmp::Ordering::Equal => self.msg.msg_id().raw().cmp(&other.msg.msg_id().raw()),
-            std::cmp::Ordering::Less => std::cmp::Ordering::Less,
-            std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
+            std::cmp::Ordering::Equal => self.msg.msg_id().cmp(&other.msg.msg_id()),
+            std::cmp::Ordering::Less => std::cmp::Ordering::Greater,
+            std::cmp::Ordering::Greater => std::cmp::Ordering::Less,
         }
     }
 }
 
 impl PartialOrd for TimedMessage {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(other.cmp(self)) //reverse ordering, because binheap is a maxqueue
+        Some(self.cmp(&other))
     }
 }
 

@@ -5,6 +5,7 @@ mod id_mngmnt;
 mod messages;
 mod modules;
 mod runner;
+mod heap;
 
 use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::ModuleId;
@@ -98,11 +99,11 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
+    let num_groups = 3000;
     let mut groups = Vec::new();
 
-    for i in 0..2 {
+    for i in 0..num_groups {
         groups.push(setup_group(r, id_reg));
-        if i % 100 == 0 {println!("{}", i)}; 
     }
 
     let mut routing = std::collections::HashMap::new();
@@ -111,7 +112,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     for idx in 0..groups.len()*2 {
         routing.insert(PortId(idx as u64), PortId((idx+2) as u64));
     }
-    let router_id = router::router::make_router(r, id_reg, 5, "CoolRouter".to_owned(), routing);
+    let router_id = router::router::make_router(r, id_reg, num_groups*2+1, "CoolRouter".to_owned(), routing);
 
     r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
@@ -177,5 +178,5 @@ fn main() {
     //let mut f = File::create("graph.dot").unwrap();
     //r.print_as_dot(&mut f);
 
-    r.run(&mut id_reg, 20).unwrap();
+    r.run(&mut id_reg, 20000).unwrap();
 }
