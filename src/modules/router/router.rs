@@ -75,7 +75,7 @@ pub fn make_router(
         r.add_module(q).unwrap();
 
         let router_queue_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
-        let router_queue_trig_con =
+        let queue_trig_con =
             Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
         let queue_split_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
         let split_router_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
@@ -93,7 +93,7 @@ pub fn make_router(
         .unwrap();
 
         r.connect_modules(
-            router_queue_trig_con,
+            queue_trig_con,
             ConnectionKind::Onedirectional,
             router_id,
             TRIG_GATE,

@@ -9,6 +9,9 @@ use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
 
+use std::io::Write;
+use std::string::String;
+
 #[derive(Clone)]
 pub enum Tree<T> {
     Node(T, Vec<Tree<T>>),
@@ -401,5 +404,37 @@ impl Runner {
         self.finalize_modules(id_reg);
 
         result
+    }
+
+    pub fn print_as_dot(&self, target: &mut Write) {
+        target.write("digraph modules {\n".as_bytes());
+        for (id, module) in &self.modules.modules {
+            target.write(
+                format!("\t{}[label={}{}];\n", id.raw(), module.name(), id.raw()).as_bytes(),
+            );
+        }
+        for (mod_id, gates) in &self.connections.gates {
+            for (gate_id, gate) in gates {
+                for (port_id, port) in &gate.ports {
+                    match port.kind {
+                        crate::connection::connection::PortKind::In => {/*ignore */}
+                        _ => {
+                            target.write(
+                                format!(
+                                    "\t{} -> {}[label=Mod{}Gate{}Port{}];\n",
+                                    mod_id.raw(),
+                                    port.rcv_mod.raw(),
+                                    mod_id.raw(),
+                                    gate_id.0,
+                                    port_id.0
+                                )
+                                .as_bytes(),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        target.write("}".as_bytes());
     }
 }

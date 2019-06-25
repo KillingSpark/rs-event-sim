@@ -111,7 +111,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     for idx in 0..groups.len()*2 {
         routing.insert(PortId(idx as u64), PortId((idx+2) as u64));
     }
-    let router_id = router::router::make_router(r, id_reg, 100, "CoolRouter".to_owned(), routing);
+    let router_id = router::router::make_router(r, id_reg, 5, "CoolRouter".to_owned(), routing);
 
     r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
@@ -172,6 +172,10 @@ fn main() {
     };
 
     setup_modules(&mut r, &mut id_reg);
+
+    use std::fs::File;
+    let mut f = File::create("example1.dot").unwrap();
+    r.print_as_dot(&mut f);
 
     r.run(&mut id_reg, 20).unwrap();
 }
