@@ -376,8 +376,10 @@ impl Runner {
                 println!("Time: {}, {}%", self.clock.now(), percentage_time_passed);
                 println!("Msgs: {}, Events: {}", msgs_processed_total, events_processed_total);
 
-                let secs = std::time::Instant::now().duration_since(time).as_secs();
+                let new_time = std::time::Instant::now();
+                let secs = new_time.duration_since(time).as_secs();
                 println!("Real seconds passed: {}", secs);
+                time = new_time; 
                 if secs > 0 {
                     println!("Msgs/s: {}, Events/s: {}", msgs_processed/secs, events_processed/secs);
                     msgs_processed = 0;
