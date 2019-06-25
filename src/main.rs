@@ -173,9 +173,9 @@ fn main() {
 
     setup_modules(&mut r, &mut id_reg);
 
-    use std::fs::File;
-    let mut f = File::create("example1.dot").unwrap();
-    r.print_as_dot(&mut f);
+    //use std::fs::File;
+    //let mut f = File::create("graph.dot").unwrap();
+    //r.print_as_dot(&mut f);
 
     r.run(&mut id_reg, 20).unwrap();
 }
