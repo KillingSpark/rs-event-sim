@@ -13,6 +13,9 @@ use modules::container;
 use modules::echo_module;
 use modules::simple_module;
 use modules::sink;
+use modules::router;
+use modules::splitter;
+use modules::queue;
 
 use connection::simple_connection;
 use events::{event, text_event};
@@ -26,6 +29,9 @@ fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_connection::register(id_reg);
     echo_module::register(id_reg);
     container::register(id_reg);
+    router::router::register(id_reg);
+    queue::queue::register(id_reg);
+    splitter::register(id_reg);
 }
 
 fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
@@ -94,30 +100,51 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
 
     let mut groups = Vec::new();
 
-    for i in 0..100 {
+    for i in 0..2 {
         groups.push(setup_group(r, id_reg));
         if i % 100 == 0 {println!("{}", i)}; 
     }
 
-    let mut idx = 0;
-    for group in groups {
-        r.connect_modules(
+    let mut routing = std::collections::HashMap::new();
+
+    //route from echo to echo as a chain until the last one will be dropped by the router
+    for idx in 0..groups.len()*2 {
+        routing.insert(PortId(idx as u64), PortId((idx+2) as u64));
+    }
+    let router_id = router::router::make_router(r, id_reg, 100, "CoolRouter".to_owned(), routing);
+
+    r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
             crate::connection::mesh::ConnectionKind::Onedirectional,
             smod_id,
             simple_module::OUT_GATE,
+            PortId(0),
+            router_id,
+            container::OUTER_GATE,
+            PortId(0),
+        )
+        .unwrap();
+
+    let mut idx = 1;
+    for group in groups {
+        r.connect_modules(
+            Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+            crate::connection::mesh::ConnectionKind::Onedirectional,
+            router_id,
+            container::OUTER_GATE,
             PortId(idx),
             group,
             container::OUTER_GATE,
             PortId(0),
         )
         .unwrap();
+        
 
         r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
             crate::connection::mesh::ConnectionKind::Bidrectional,
-            smod_id,
-            simple_module::OUT_GATE,
+            router_id,
+            container::OUTER_GATE,
             PortId(idx + 1),
             group,
             container::OUTER_GATE,
@@ -146,5 +173,5 @@ fn main() {
 
     setup_modules(&mut r, &mut id_reg);
 
-    r.run(&mut id_reg, 500).unwrap();
+    r.run(&mut id_reg, 20).unwrap();
 }
