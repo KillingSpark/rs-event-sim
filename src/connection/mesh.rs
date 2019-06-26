@@ -13,6 +13,7 @@ pub struct ConnectionMesh {
 
     pub gates: std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
     pub messages: std::collections::BinaryHeap<TimedMessage>,
+    pub messages_now: std::collections::VecDeque<TimedMessage>,
 }
 
 impl ConnectionMesh {
@@ -148,13 +149,23 @@ impl ConnectionMesh {
 
         match conn.handle_message(msg, ctx) {
             Some((time, msg)) => {
-                self.messages.push(TimedMessage {
-                    time: time,
-                    msg: msg,
-                    recipient: out_port.rcv_mod,
-                    recp_gate: out_port.rcv_gate,
-                    recp_port: out_port.rcv_port,
-                });
+                if time == ctx.time.now() {
+                    self.messages_now.push_back(TimedMessage {
+                        time: time,
+                        msg: msg,
+                        recipient: out_port.rcv_mod,
+                        recp_gate: out_port.rcv_gate,
+                        recp_port: out_port.rcv_port,
+                    });
+                } else {
+                    self.messages.push(TimedMessage {
+                        time: time,
+                        msg: msg,
+                        recipient: out_port.rcv_mod,
+                        recp_gate: out_port.rcv_gate,
+                        recp_port: out_port.rcv_port,
+                    });
+                }
             }
             None => {}
         }

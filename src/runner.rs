@@ -4,7 +4,7 @@ use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module}; 
+use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
@@ -130,6 +130,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
             gates: std::collections::HashMap::new(),
 
             messages: std::collections::BinaryHeap::new(),
+            messages_now: std::collections::VecDeque::new(),
         },
 
         prng: XorShiftRng::from_seed(seed),
@@ -271,6 +272,28 @@ impl Runner {
             msg_counter += 1;
         }
 
+        loop {
+            if self.connections.messages_now.len() == 0 {
+                break;
+            }
+
+            let tmsg = self.connections.messages_now.pop_front().unwrap();
+            let mut ctx = HandleContext {
+                time: &self.clock,
+                id_reg: id_reg,
+                connections: &mut self.connections,
+                timer_queue: &mut self.timer_queue,
+                prng: &mut self.prng,
+            };
+            self.modules
+                .modules
+                .get_mut(&tmsg.recipient)
+                .unwrap()
+                .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
+                .unwrap();
+            msg_counter += 1;
+        }
+
         msg_counter
     }
 
@@ -374,28 +397,39 @@ impl Runner {
             if 100 * self.clock.now() / endtime > percentage_time_passed {
                 percentage_time_passed = 100 * self.clock.now() / endtime;
                 println!("Time: {}, {}%", self.clock.now(), percentage_time_passed);
-                println!("Msgs: {}, Events: {}", msgs_processed_total, events_processed_total);
+                println!(
+                    "Msgs: {}, Events: {}",
+                    msgs_processed_total, events_processed_total
+                );
 
                 let new_time = std::time::Instant::now();
                 let secs = new_time.duration_since(time).as_secs();
                 println!("Real seconds passed: {}", secs);
-                time = new_time; 
+                time = new_time;
                 if secs > 0 {
-                    println!("Msgs/s: {}, Events/s: {}", msgs_processed/secs, events_processed/secs);
+                    println!(
+                        "Msgs/s: {}, Events/s: {}",
+                        msgs_processed / secs,
+                        events_processed / secs
+                    );
                     msgs_processed = 0;
                     events_processed = 0;
                 }
 
-                println!("Msgs in queue: {}, Events in queue: {}", self.connections.messages.len(), self.timer_queue.len());
+                println!(
+                    "Msgs in queue: {}, Events in queue: {}",
+                    self.connections.messages.len(),
+                    self.timer_queue.len()
+                );
             }
 
             //process events and messages until no more messages are there and no more events registered for this clock time
-            
+
             loop {
                 let evs = self.process_events(id_reg).unwrap();
                 let msgs = self.process_messages(id_reg);
 
-                let x = evs+msgs;
+                let x = evs + msgs;
                 events_processed_total += evs;
                 events_processed += evs;
                 msgs_processed_total += msgs;
