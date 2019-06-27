@@ -5,7 +5,6 @@ mod id_mngmnt;
 mod messages;
 mod modules;
 mod runner;
-mod heap;
 
 use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::ModuleId;
@@ -17,6 +16,7 @@ use modules::sink;
 use modules::router;
 use modules::splitter;
 use modules::queue;
+use modules::router::rate_puller;
 
 use connection::simple_connection;
 use events::{event, text_event};
@@ -33,6 +33,7 @@ fn register_needed_types(id_reg: &mut IdRegistrar) {
     router::router::register(id_reg);
     queue::queue::register(id_reg);
     splitter::register(id_reg);
+    rate_puller::register(id_reg);
 }
 
 fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
@@ -99,10 +100,10 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
-    let num_groups = 3000;
+    let num_groups = 100;
     let mut groups = Vec::new();
 
-    for i in 0..num_groups {
+    for _ in 0..num_groups {
         groups.push(setup_group(r, id_reg));
     }
 
@@ -115,7 +116,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let router_id = router::router::make_router(r, id_reg, num_groups*2+1, "CoolRouter".to_owned(), routing);
 
     r.connect_modules(
-            Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+            Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
             crate::connection::mesh::ConnectionKind::Onedirectional,
             smod_id,
             simple_module::OUT_GATE,
@@ -129,7 +130,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     let mut idx = 1;
     for group in groups {
         r.connect_modules(
-            Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
+            Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
             crate::connection::mesh::ConnectionKind::Onedirectional,
             router_id,
             container::OUTER_GATE,
@@ -178,5 +179,5 @@ fn main() {
     //let mut f = File::create("graph.dot").unwrap();
     //r.print_as_dot(&mut f);
 
-    r.run(&mut id_reg, 20000).unwrap();
+    r.run(&mut id_reg, 2000000).unwrap();
 }

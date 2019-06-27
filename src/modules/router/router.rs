@@ -18,10 +18,6 @@ pub const OUT_GATE: GateId = GateId(0);
 //messages are received here, processed and sent to the out-buffer on the respective port
 pub const IN_GATE: GateId = GateId(1);
 
-//trigger queues immediatly. This will eventually be replaced by a module on the other side of the buffer that manages some kind of
-//speed-restriction on messages sent through it
-pub const TRIG_GATE: GateId = GateId(2);
-
 pub static TYPE_STR: &str = "RouterModule";
 
 pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
@@ -46,6 +42,7 @@ use crate::connection::mesh::ConnectionKind;
 use crate::connection::simple_connection;
 use crate::modules::container;
 use crate::modules::queue;
+use crate::modules::router::rate_puller;
 use crate::modules::splitter;
 use crate::runner::Runner;
 
@@ -74,12 +71,47 @@ pub fn make_router(
         let queue_id = q.module_id();
         r.add_module(q).unwrap();
 
-        let router_queue_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
-        let queue_trig_con =
-            Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
-        let queue_split_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
-        let split_router_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+        let rate = Box::new(rate_puller::new(id_reg, "RateLimiter".to_owned(), 1));
+        let rate_id = rate.module_id();
+        r.add_module(rate).unwrap();
+
+        //provides interfaces to the outer gate of the enclosing container
+        //splits into two ways
         let split_outer_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+
+        r.connect_modules(
+            split_outer_con,
+            ConnectionKind::Bidrectional,
+            split_id,
+            splitter::IN_OUT_GATE,
+            PortId(idx),
+            container_id,
+            container::INNER_GATE,
+            PortId(idx),
+        )
+        .unwrap();
+
+        // 1) from outside into router directly
+        let split_router_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+
+        r.connect_modules(
+            split_router_con,
+            ConnectionKind::Onedirectional,
+            split_id,
+            splitter::SPLIT_OUT_GATE,
+            PortId(idx),
+            router_id,
+            IN_GATE,
+            PortId(idx),
+        )
+        .unwrap();
+
+        // 2) from router to outside through a buffer and a rate-limited puller
+        let router_queue_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+        let queue_trig_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+        let queue_rate_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+        let rate_split_con = Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0));
+
         r.connect_modules(
             router_queue_con,
             ConnectionKind::Onedirectional,
@@ -95,9 +127,9 @@ pub fn make_router(
         r.connect_modules(
             queue_trig_con,
             ConnectionKind::Onedirectional,
-            router_id,
-            TRIG_GATE,
-            PortId(idx),
+            rate_id,
+            rate_puller::TRIG_GATE,
+            PortId(0),
             queue_id,
             queue::queue::TRIGG_GATE,
             PortId(0),
@@ -105,37 +137,25 @@ pub fn make_router(
         .unwrap();
 
         r.connect_modules(
-            queue_split_con,
+            queue_rate_con,
             ConnectionKind::Onedirectional,
             queue_id,
             queue::queue::OUT_GATE,
             PortId(0),
+            rate_id,
+            splitter::SPLIT_IN_GATE,
+            PortId(0),
+        )
+        .unwrap();
+
+        r.connect_modules(
+            rate_split_con,
+            ConnectionKind::Onedirectional,
+            rate_id,
+            rate_puller::OUT_GATE,
+            PortId(0),
             split_id,
             splitter::SPLIT_IN_GATE,
-            PortId(idx),
-        )
-        .unwrap();
-
-        r.connect_modules(
-            split_router_con,
-            ConnectionKind::Onedirectional,
-            split_id,
-            splitter::SPLIT_OUT_GATE,
-            PortId(idx),
-            router_id,
-            IN_GATE,
-            PortId(idx),
-        )
-        .unwrap();
-
-        r.connect_modules(
-            split_outer_con,
-            ConnectionKind::Bidrectional,
-            split_id,
-            splitter::IN_OUT_GATE,
-            PortId(idx),
-            container_id,
-            container::INNER_GATE,
             PortId(idx),
         )
         .unwrap();
@@ -146,7 +166,7 @@ pub fn make_router(
 
 impl Module for Router {
     fn get_gate_ids(&self) -> Vec<GateId> {
-        vec![OUT_GATE, IN_GATE, TRIG_GATE]
+        vec![OUT_GATE, IN_GATE]
     }
 
     fn handle_message(
@@ -159,10 +179,6 @@ impl Module for Router {
         match gate {
             IN_GATE => match self.routing_table.get(&port) {
                 Some(out_port) => {
-                    let sig = Box::new(crate::messages::text_message::new_text_msg(
-                        ctx.id_reg,
-                        "".to_owned(),
-                    ));
                     let mut mctx = crate::connection::connection::HandleContext {
                         time: ctx.time,
                         id_reg: ctx.id_reg,
@@ -170,9 +186,6 @@ impl Module for Router {
                     };
                     ctx.connections
                         .send_message(msg, self.id, OUT_GATE, *out_port, &mut mctx);
-
-                    ctx.connections
-                        .send_message(sig, self.id, TRIG_GATE, *out_port, &mut mctx);
                 }
                 None => {
                     //println!(

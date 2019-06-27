@@ -421,6 +421,8 @@ impl Runner {
                     self.connections.messages.len(),
                     self.timer_queue.len()
                 );
+
+                println!("     ");
             }
 
             //process events and messages until no more messages are there and no more events registered for this clock time
