@@ -1,0 +1,96 @@
+digraph {
+	1[label=Source1];
+	subgraph cluster_4 { 
+	label="4Group";
+	4[label=Group4];
+		3[label=Echo3];
+		2[label=Sink2];
+	 }
+	subgraph cluster_9 { 
+	label="9Group";
+	9[label=Group9];
+		8[label=Echo8];
+		7[label=Sink7];
+	 }
+	subgraph cluster_14 { 
+	label="14Group";
+	14[label=Group14];
+		13[label=Echo13];
+		12[label=Sink12];
+	 }
+	subgraph cluster_17 { 
+	label="17CoolRouter";
+	17[label=CoolRouter17];
+		18[label=RouterCore18];
+		19[label=Splitter19];
+		20[label=Buffer20];
+		21[label=RateLimiter21];
+		28[label=Buffer28];
+		29[label=RateLimiter29];
+		36[label=Buffer36];
+		37[label=RateLimiter37];
+		44[label=Buffer44];
+		45[label=RateLimiter45];
+		52[label=Buffer52];
+		53[label=RateLimiter53];
+		60[label=Buffer60];
+		61[label=RateLimiter61];
+		68[label=Buffer68];
+		69[label=RateLimiter69];
+	 }
+	37 -> 36[label=Mod37Gate2Port0];
+	37 -> 19[label=Mod37Gate0Port0];
+	9 -> 7[label=Mod9Gate0Port0];
+	9 -> 17[dir="both",label=Mod9Gate1Port1];
+	1 -> 17[label=Mod1Gate0Port0];
+	44 -> 45[label=Mod44Gate0Port0];
+	20 -> 21[label=Mod20Gate0Port0];
+	29 -> 28[label=Mod29Gate2Port0];
+	29 -> 19[label=Mod29Gate0Port0];
+	18 -> 68[label=Mod18Gate0Port6];
+	18 -> 36[label=Mod18Gate0Port2];
+	18 -> 20[label=Mod18Gate0Port0];
+	18 -> 28[label=Mod18Gate0Port1];
+	18 -> 44[label=Mod18Gate0Port3];
+	18 -> 52[label=Mod18Gate0Port4];
+	18 -> 60[label=Mod18Gate0Port5];
+	28 -> 29[label=Mod28Gate0Port0];
+	68 -> 69[label=Mod68Gate0Port0];
+	13 -> 14[dir="both",label=Mod13Gate1Port0];
+	4 -> 2[label=Mod4Gate0Port0];
+	4 -> 17[dir="both",label=Mod4Gate1Port1];
+	52 -> 53[label=Mod52Gate0Port0];
+	53 -> 19[label=Mod53Gate0Port0];
+	53 -> 52[label=Mod53Gate2Port0];
+	19 -> 18[label=Mod19Gate0Port0];
+	19 -> 18[label=Mod19Gate0Port5];
+	19 -> 18[label=Mod19Gate0Port1];
+	19 -> 18[label=Mod19Gate0Port2];
+	19 -> 18[label=Mod19Gate0Port3];
+	19 -> 18[label=Mod19Gate0Port6];
+	19 -> 18[label=Mod19Gate0Port4];
+	61 -> 60[label=Mod61Gate2Port0];
+	61 -> 19[label=Mod61Gate0Port0];
+	21 -> 19[label=Mod21Gate0Port0];
+	21 -> 20[label=Mod21Gate2Port0];
+	36 -> 37[label=Mod36Gate0Port0];
+	14 -> 17[dir="both",label=Mod14Gate1Port1];
+	14 -> 12[label=Mod14Gate0Port0];
+	60 -> 61[label=Mod60Gate0Port0];
+	45 -> 19[label=Mod45Gate0Port0];
+	45 -> 44[label=Mod45Gate2Port0];
+	8 -> 9[dir="both",label=Mod8Gate1Port0];
+	69 -> 68[label=Mod69Gate2Port0];
+	69 -> 19[label=Mod69Gate0Port0];
+	17 -> 9[label=Mod17Gate0Port3];
+	17 -> 14[label=Mod17Gate0Port5];
+	17 -> 4[label=Mod17Gate0Port1];
+	17 -> 19[dir="both",label=Mod17Gate1Port2];
+	17 -> 19[dir="both",label=Mod17Gate1Port0];
+	17 -> 19[dir="both",label=Mod17Gate1Port4];
+	17 -> 19[dir="both",label=Mod17Gate1Port1];
+	17 -> 19[dir="both",label=Mod17Gate1Port3];
+	17 -> 19[dir="both",label=Mod17Gate1Port6];
+	17 -> 19[dir="both",label=Mod17Gate1Port5];
+	3 -> 4[dir="both",label=Mod3Gate1Port0];
+}

@@ -109,10 +109,10 @@ pub struct Runner {
 
     timer_queue: std::collections::BinaryHeap<TimerEvent>,
 
-    connections: ConnectionMesh,
+    pub connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
 
-    module_forest: Vec<Tree<(String, ModuleId)>>,
+    pub module_forest: Vec<Tree<(String, ModuleId)>>,
     modules: ModuleMngr,
 }
 
@@ -474,10 +474,11 @@ impl Runner {
     #[allow(dead_code)]
     pub fn print_as_dot(&self, target: &mut Write) {
         target.write("digraph modules {\n".as_bytes()).unwrap();
+
         for (id, module) in &self.modules.modules {
-            target.write(
-                format!("\t{}[label={}{}];\n", id.raw(), module.name(), id.raw()).as_bytes(),
-            ).unwrap();
+            target
+                .write(format!("\t{}[label={}{}];\n", id.raw(), module.name(), id.raw()).as_bytes())
+                .unwrap();
         }
         for (mod_id, gates) in &self.connections.gates {
             for (gate_id, gate) in gates {
@@ -485,22 +486,65 @@ impl Runner {
                     match port.kind {
                         crate::connection::connection::PortKind::In => { /*ignore */ }
                         _ => {
-                            target.write(
-                                format!(
-                                    "\t{} -> {}[label=Mod{}Gate{}Port{}];\n",
-                                    mod_id.raw(),
-                                    port.rcv_mod.raw(),
-                                    mod_id.raw(),
-                                    gate_id.0,
-                                    port_id.0
+                            target
+                                .write(
+                                    format!(
+                                        "\t{} -> {}[label=Mod{}Gate{}Port{}];\n",
+                                        mod_id.raw(),
+                                        port.rcv_mod.raw(),
+                                        mod_id.raw(),
+                                        gate_id.0,
+                                        port_id.0
+                                    )
+                                    .as_bytes(),
                                 )
-                                .as_bytes(),
-                            ).unwrap();
+                                .unwrap();
                         }
                     }
                 }
             }
         }
         target.write("}".as_bytes()).unwrap();
+    }
+}
+
+#[allow(dead_code)]
+pub fn print_parent_as_dot(
+    prefix: &str,
+    tree: &Tree<(String, ModuleId)>,
+    target: &mut Write,
+) {
+    match tree {
+        Tree::Node((name, id), children) => {
+            target
+                .write(
+                    format!(
+                        "{}subgraph cluster_{} {{ \n{}label=\"{}{}\";\n",
+                        prefix,
+                        id.raw(),
+                        prefix,
+                        id.raw(),
+                        name
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+            target
+                .write(format!("{}{}[label={}{}];\n", prefix, id.raw(), name, id.raw()).as_bytes())
+                .unwrap();
+
+            for c in children {
+                let mut new_prefix = "\t".to_owned();
+                new_prefix.push_str(prefix);
+                print_parent_as_dot(new_prefix.as_str(), c, target);
+            }
+
+            target.write(format!("{} }}\n", prefix).as_bytes()).unwrap();
+        }
+        Tree::Leaf((name, id)) => {
+            target
+                .write(format!("{}{}[label={}{}];\n", prefix, id.raw(), name, id.raw()).as_bytes())
+                .unwrap();
+        }
     }
 }
