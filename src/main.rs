@@ -182,54 +182,8 @@ fn main() {
 
     use std::fs::File;
     let mut f = File::create("graph.dot").unwrap();
-    //r.print_as_dot(&mut f);
+    r.print_as_dot(&mut f);
 
     r.run(&mut id_reg, 100).unwrap();
 
-    use std::io::Write;
-    f.write("digraph {\n".as_bytes()).unwrap();
-    for m in &r.module_forest {
-        runner::print_parent_as_dot("\t", m, &mut f);
-    }
-
-    for (mod_id, gates) in &r.connections.gates {
-        for (gate_id, gate) in gates {
-            for (port_id, port) in &gate.ports {
-                match port.kind {
-                    crate::connection::connection::PortKind::In => { /*ignore */ }
-                    crate::connection::connection::PortKind::Out => {
-                        f.write(
-                            format!(
-                                "\t{} -> {}[label=Mod{}Gate{}Port{}];\n",
-                                mod_id.raw(),
-                                port.rcv_mod.raw(),
-                                mod_id.raw(),
-                                gate_id.0,
-                                port_id.0
-                            )
-                            .as_bytes(),
-                        )
-                        .unwrap();
-                    }
-                    crate::connection::connection::PortKind::InOut => {
-                        if *mod_id < port.rcv_mod {
-                            f.write(
-                                format!(
-                                    "\t{} -> {}[dir=\"both\",label=Mod{}Gate{}Port{}];\n",
-                                    mod_id.raw(),
-                                    port.rcv_mod.raw(),
-                                    mod_id.raw(),
-                                    gate_id.0,
-                                    port_id.0
-                                )
-                                .as_bytes(),
-                            )
-                            .unwrap();
-                        }
-                    }
-                }
-            }
-        }
-    }
-    f.write("}\n".as_bytes()).unwrap();
 }

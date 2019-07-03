@@ -473,19 +473,17 @@ impl Runner {
 
     #[allow(dead_code)]
     pub fn print_as_dot(&self, target: &mut Write) {
-        target.write("digraph modules {\n".as_bytes()).unwrap();
-
-        for (id, module) in &self.modules.modules {
-            target
-                .write(format!("\t{}[label={}{}];\n", id.raw(), module.name(), id.raw()).as_bytes())
-                .unwrap();
+        target.write("digraph {\n".as_bytes()).unwrap();
+        for m in &self.module_forest {
+            print_parent_as_dot("\t", m, target);
         }
+
         for (mod_id, gates) in &self.connections.gates {
             for (gate_id, gate) in gates {
                 for (port_id, port) in &gate.ports {
                     match port.kind {
                         crate::connection::connection::PortKind::In => { /*ignore */ }
-                        _ => {
+                        crate::connection::connection::PortKind::Out => {
                             target
                                 .write(
                                     format!(
@@ -500,20 +498,33 @@ impl Runner {
                                 )
                                 .unwrap();
                         }
+                        crate::connection::connection::PortKind::InOut => {
+                            if *mod_id < port.rcv_mod {
+                                target
+                                    .write(
+                                        format!(
+                                            "\t{} -> {}[dir=\"both\",label=Mod{}Gate{}Port{}];\n",
+                                            mod_id.raw(),
+                                            port.rcv_mod.raw(),
+                                            mod_id.raw(),
+                                            gate_id.0,
+                                            port_id.0
+                                        )
+                                        .as_bytes(),
+                                    )
+                                    .unwrap();
+                            }
+                        }
                     }
                 }
             }
         }
-        target.write("}".as_bytes()).unwrap();
+        target.write("}\n".as_bytes()).unwrap();
     }
 }
 
 #[allow(dead_code)]
-pub fn print_parent_as_dot(
-    prefix: &str,
-    tree: &Tree<(String, ModuleId)>,
-    target: &mut Write,
-) {
+pub fn print_parent_as_dot(prefix: &str, tree: &Tree<(String, ModuleId)>, target: &mut Write) {
     match tree {
         Tree::Node((name, id), children) => {
             target
