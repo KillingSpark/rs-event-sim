@@ -15,6 +15,7 @@ static SECONDS: u64 = 1000*MILLI_SECONDS;
 static MILLI_SECONDS: u64 = 1000*MICRO_SECONDS;
 static MICRO_SECONDS: u64 = 1000;
 
+#[allow(dead_code)]
 impl Clock {
     pub fn set(&mut self, time: u64) -> Result<(), Box<std::error::Error>> {
         if self.time > time {

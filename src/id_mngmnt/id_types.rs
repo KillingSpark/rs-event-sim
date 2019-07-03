@@ -33,6 +33,7 @@ impl EventsId {
 }
 
 impl MessageId {
+    #[allow(dead_code)]
     pub fn raw(&self)-> u64 {
         match self {MessageId(id) => *id}
     }

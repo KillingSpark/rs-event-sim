@@ -4,6 +4,16 @@ use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
+
+use crate::connection::mesh::ConnectionKind;
+use crate::connection::simple_connection;
+use crate::modules::container;
+use crate::modules::queue;
+use crate::modules::router::rate_puller;
+use crate::modules::splitter;
+use crate::runner::Runner;
+use crate::runner;
+
 pub struct Router {
     type_id: ModuleTypeId,
     id: ModuleId,
@@ -20,8 +30,13 @@ pub const IN_GATE: GateId = GateId(1);
 
 pub static TYPE_STR: &str = "RouterModule";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
+    queue::queue::register(id_reg);
+    container::register(id_reg);
+    rate_puller::register(id_reg);
+    splitter::register(id_reg);
+    simple_connection::register(id_reg);
 }
 
 fn new(
@@ -38,13 +53,8 @@ fn new(
     }
 }
 
-use crate::connection::mesh::ConnectionKind;
-use crate::connection::simple_connection;
-use crate::modules::container;
-use crate::modules::queue;
-use crate::modules::router::rate_puller;
-use crate::modules::splitter;
-use crate::runner::Runner;
+pub const ROUTER_GATE_OUTER: GateId = GateId(0);
+pub const ROUTER_GATE_INNER: GateId = GateId(1);
 
 pub fn make_router(
     r: &mut Runner,
@@ -52,8 +62,8 @@ pub fn make_router(
     port_count: u64,
     name: String,
     routing_table: std::collections::HashMap<PortId, PortId>,
-) -> ModuleId {
-    let container = Box::new(container::new_module_container(id_reg, name));
+) -> (ModuleId, runner::Tree<(String, ModuleId)>) {
+    let container = Box::new(container::new_module_container(id_reg, name.clone(), vec![(ROUTER_GATE_INNER, ROUTER_GATE_OUTER)]));
     let container_id = container.module_id();
 
     let router = Box::new(new(id_reg, "RouterCore".to_owned(), routing_table));
@@ -62,6 +72,11 @@ pub fn make_router(
     let split = Box::new(splitter::new(id_reg, "Splitter".to_owned()));
     let split_id = split.module_id();
 
+    let mut children = vec![
+        runner::Tree::Leaf((router.name(), router_id)),
+        runner::Tree::Leaf((split.name(), split_id)),
+    ];
+
     r.add_module(container).unwrap();
     r.add_module(router).unwrap();
     r.add_module(split).unwrap();
@@ -69,11 +84,15 @@ pub fn make_router(
     for idx in 0..port_count {
         let q = Box::new(queue::queue::new(id_reg, "Buffer".to_owned()));
         let queue_id = q.module_id();
-        r.add_module(q).unwrap();
 
         let rate = Box::new(rate_puller::new(id_reg, "RateLimiter".to_owned(), 1));
         let rate_id = rate.module_id();
+
+        children.push(runner::Tree::Leaf((q.name(), queue_id)));
+        children.push(runner::Tree::Leaf((rate.name(), rate_id)));
+
         r.add_module(rate).unwrap();
+        r.add_module(q).unwrap();
 
         //provides interfaces to the outer gate of the enclosing container
         //splits into two ways
@@ -86,7 +105,7 @@ pub fn make_router(
             splitter::IN_OUT_GATE,
             PortId(idx),
             container_id,
-            container::INNER_GATE,
+            ROUTER_GATE_INNER,
             PortId(idx),
         )
         .unwrap();
@@ -161,7 +180,7 @@ pub fn make_router(
         .unwrap();
     }
 
-    container_id
+    (container_id, runner::Tree::Node((name, container_id), children))
 }
 
 impl Module for Router {

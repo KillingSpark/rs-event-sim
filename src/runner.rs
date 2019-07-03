@@ -471,12 +471,13 @@ impl Runner {
         result
     }
 
+    #[allow(dead_code)]
     pub fn print_as_dot(&self, target: &mut Write) {
-        target.write("digraph modules {\n".as_bytes());
+        target.write("digraph modules {\n".as_bytes()).unwrap();
         for (id, module) in &self.modules.modules {
             target.write(
                 format!("\t{}[label={}{}];\n", id.raw(), module.name(), id.raw()).as_bytes(),
-            );
+            ).unwrap();
         }
         for (mod_id, gates) in &self.connections.gates {
             for (gate_id, gate) in gates {
@@ -494,12 +495,12 @@ impl Runner {
                                     port_id.0
                                 )
                                 .as_bytes(),
-                            );
+                            ).unwrap();
                         }
                     }
                 }
             }
         }
-        target.write("}".as_bytes());
+        target.write("}".as_bytes()).unwrap();
     }
 }

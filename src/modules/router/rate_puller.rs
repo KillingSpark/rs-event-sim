@@ -1,8 +1,9 @@
-use crate::event::Event;
+use crate::event::{Event, TimerEvent};
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::text_event;
 
 pub struct RatePuller {
     type_id: ModuleTypeId,
@@ -66,6 +67,18 @@ impl Module for RatePuller {
                     };
                     ctx.connections
                         .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
+                } else {
+                    let time_till_next_pull =
+                        self.rate - (ctx.time.now() - self.last_time_requested);
+                    ctx.timer_queue.push(TimerEvent {
+                        time: ctx.time.now() + time_till_next_pull,
+                        mod_id: self.id,
+
+                        event: Box::new(text_event::new_text_event(
+                            ctx.id_reg,
+                            "Pull new message".to_owned(),
+                        )),
+                    });
                 }
 
                 let mut mctx = crate::connection::connection::HandleContext {
@@ -86,9 +99,21 @@ impl Module for RatePuller {
     fn handle_timer_event(
         &mut self,
         _ev: &Event,
-        _ctx: &mut HandleContext,
+        ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        panic!("Should never receive timer events")
+        let sig = Box::new(crate::messages::text_message::new_text_msg(
+            ctx.id_reg,
+            "New Message Plz".to_owned(),
+        ));
+        let mut mctx = crate::connection::connection::HandleContext {
+            time: ctx.time,
+            id_reg: ctx.id_reg,
+            prng: ctx.prng,
+        };
+        ctx.connections
+            .send_message(sig, self.id, TRIG_GATE, PortId(0), &mut mctx);
+
+        Ok(HandleResult{})
     }
 
     fn module_type_id(&self) -> ModuleTypeId {

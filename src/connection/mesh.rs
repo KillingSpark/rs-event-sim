@@ -12,7 +12,11 @@ pub struct ConnectionMesh {
     pub connections: std::collections::HashMap<ConnectionId, Box<Connection>>,
 
     pub gates: std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
+
+    //messages that will be handled in the future
     pub messages: std::collections::BinaryHeap<TimedMessage>,
+
+    //messages that will be handled in this point in time. No need to sift them through the heap and immediately pop them
     pub messages_now: std::collections::VecDeque<TimedMessage>,
 }
 
