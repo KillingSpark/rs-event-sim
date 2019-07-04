@@ -503,12 +503,15 @@ impl Runner {
                             target
                                 .write(
                                     format!(
-                                        "\t{} -> {}[label=Mod{}Gate{}Port{}];\n",
-                                        mod_id.raw(),
-                                        port.rcv_mod.raw(),
-                                        mod_id.raw(),
-                                        gate_id.0,
-                                        port_id.0
+                                        "\t{} -> {}[label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
+                                            mod_id.raw(),
+                                            port.rcv_mod.raw(),
+                                            mod_id.raw(),
+                                            gate_id.0,
+                                            port_id.0,
+                                            port.rcv_mod.raw(),
+                                            port.rcv_gate.0,
+                                            port.rcv_port.0,
                                     )
                                     .as_bytes(),
                                 )
@@ -519,12 +522,15 @@ impl Runner {
                                 target
                                     .write(
                                         format!(
-                                            "\t{} -> {}[dir=\"both\",label=Mod{}Gate{}Port{}];\n",
+                                            "\t{} -> {}[dir=\"both\",label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
                                             mod_id.raw(),
                                             port.rcv_mod.raw(),
                                             mod_id.raw(),
                                             gate_id.0,
-                                            port_id.0
+                                            port_id.0,
+                                            port.rcv_mod.raw(),
+                                            port.rcv_gate.0,
+                                            port.rcv_port.0,
                                         )
                                         .as_bytes(),
                                     )

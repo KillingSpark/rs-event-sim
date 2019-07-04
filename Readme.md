@@ -8,4 +8,15 @@ At the core it is pretty much the same though, you can send generic messages fro
 # What is missing
 1. A better way than printing DOT graphs to visualize the graph
 1. The signaling part of omnet++ seems interesting but I am not sure if it is needed to implement all functionality. I feel like it is used but it wouldnt have been necessary
-1. Having a NED parser would be fantastic. I would still like to have the possibility to create Modules in rust code but NED files are a convenient way of describing the whole container structure which gets tedious in rust. Maybe there is a way to make it more ergonomic without introducing a secondary language though.  
+1. Having a NED parser would be fantastic. I would still like to have the possibility to create Modules in rust code but NED files are a convenient way of describing the whole container structure which gets tedious in rust. Maybe there is a way to make it more ergonomic without introducing a secondary language though. This would need a generic way to create modules of a given type with a Hashmap of given arguments. Exmaple: 
+``` 
+factory.create("RouterModule", 
+    hashmap{
+        "ports" => 20, 
+        "buffersize" => 100, 
+        "outrate" => 100
+    })
+    .map_err(
+        |_| => panic!("Error while instantiating a Router")
+    ); 
+```
