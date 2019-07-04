@@ -198,13 +198,8 @@ impl Module for Router {
         match gate {
             IN_GATE => match self.routing_table.get(&port) {
                 Some(out_port) => {
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.time,
-                        id_reg: ctx.id_reg,
-                        prng: ctx.prng,
-                    };
                     ctx.connections
-                        .send_message(msg, self.id, OUT_GATE, *out_port, &mut mctx);
+                        .send_message(msg, self.id, OUT_GATE, *out_port, &mut ctx.mctx);
                 }
                 None => {
                     //println!(

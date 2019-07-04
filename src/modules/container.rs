@@ -60,9 +60,9 @@ impl ModuleContainer {
         match redirect_gate {
             Some(redirect_gate) => {
                 let mut mctx = crate::connection::connection::HandleContext {
-                    time: ctx.time,
-                    id_reg: ctx.id_reg,
-                    prng: ctx.prng,
+                    time: ctx.mctx.time,
+                    id_reg: ctx.mctx.id_reg,
+                    prng: ctx.mctx.prng,
                 };
 
                 ctx.connections

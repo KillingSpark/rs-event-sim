@@ -48,16 +48,11 @@ impl SimpleModule {
             Some(ports) => {
                 for port in ports {
                     let sig = Box::new(text_message::new_text_msg(
-                        ctx.id_reg,
+                        ctx.mctx.id_reg,
                         "Received Event".to_owned(),
                     ));
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.time,
-                        id_reg: ctx.id_reg,
-                        prng: ctx.prng,
-                    };
                     ctx.connections
-                        .send_message(sig, self.id, OUT_GATE, port, &mut mctx);
+                        .send_message(sig, self.id, OUT_GATE, port, &mut ctx.mctx);
                     self.messages_sent += 1;
                 }
                 self.msg_counter += 1;
@@ -93,12 +88,12 @@ impl Module for SimpleModule {
         ev: &Event,
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        if self.msg_time != ctx.time.now() {
+        if self.msg_time != ctx.mctx.time.now() {
             self.msg_counter = 0;
-            self.msg_time = ctx.time.now();
+            self.msg_time = ctx.mctx.time.now();
         }
 
-        let te_type = ctx.id_reg.lookup_event_id("TextEvent".to_owned()).unwrap();
+        let te_type = ctx.mctx.id_reg.lookup_event_id("TextEvent".to_owned()).unwrap();
         if self.msg_counter == 0 {
             //println!(
             //    "Module with Id: {} Handled timer event: {}",
@@ -111,16 +106,16 @@ impl Module for SimpleModule {
                 ctx.timer_queue.push(TimerEvent {
                     event: Box::new(TextEvent {
                         data: tev.data.clone(),
-                        id: ctx.id_reg.new_event_id(),
+                        id: ctx.mctx.id_reg.new_event_id(),
                         type_id: te_type,
                     }),
-                    time: ctx.time.now() + 1,
+                    time: ctx.mctx.time.now() + 1,
                     mod_id: self.module_id(),
                 });
             } else {
                 println!(
                     "Was {}. Dont know what to do with it though.",
-                    ctx.id_reg
+                    ctx.mctx.id_reg
                         .lookup_event_id_reverse(ev.event_type_id())
                         .unwrap()
                 );
@@ -131,10 +126,10 @@ impl Module for SimpleModule {
             ctx.timer_queue.push(TimerEvent {
                 event: Box::new(TextEvent {
                     data: "just a wakeup".to_owned(),
-                    id: ctx.id_reg.new_event_id(),
+                    id: ctx.mctx.id_reg.new_event_id(),
                     type_id: te_type,
                 }),
-                time: ctx.time.now(),
+                time: ctx.mctx.time.now(),
                 mod_id: self.module_id(),
             });
 
@@ -160,7 +155,7 @@ impl Module for SimpleModule {
         ctx.timer_queue.push(TimerEvent {
             time: 10,
             mod_id: self.id,
-            event: Box::new(new_text_event(ctx.id_reg, "StarterEvent".to_owned())),
+            event: Box::new(new_text_event(ctx.mctx.id_reg, "StarterEvent".to_owned())),
         });
     }
 

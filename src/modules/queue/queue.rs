@@ -57,13 +57,8 @@ impl Module for Queue {
                 //else put into queue
                 if !self.receive_ready.is_empty() {
                     let bufferd_port = self.receive_ready.remove(0);
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.time,
-                        id_reg: ctx.id_reg,
-                        prng: ctx.prng,
-                    };
                     ctx.connections
-                        .send_message(msg, self.id, OUT_GATE, bufferd_port, &mut mctx);
+                        .send_message(msg, self.id, OUT_GATE, bufferd_port, &mut ctx.mctx);
                 } else {
                     self.msgs.push(msg);
                 }
@@ -74,13 +69,8 @@ impl Module for Queue {
             TRIGG_GATE => {
                 if !self.msgs.is_empty() {
                     let bufferd_msg = self.msgs.remove(0);
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.time,
-                        id_reg: ctx.id_reg,
-                        prng: ctx.prng,
-                    };
                     ctx.connections
-                        .send_message(bufferd_msg, self.id, OUT_GATE, port, &mut mctx);
+                        .send_message(bufferd_msg, self.id, OUT_GATE, port, &mut ctx.mctx);
                 } else {
                     self.receive_ready.push(port);
                 }

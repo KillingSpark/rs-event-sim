@@ -45,22 +45,12 @@ impl Module for Splitter {
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             SPLIT_IN_GATE => {
-                let mut mctx = crate::connection::connection::HandleContext {
-                    time: ctx.time,
-                    id_reg: ctx.id_reg,
-                    prng: ctx.prng,
-                };
                 ctx.connections
-                    .send_message(msg, self.id, IN_OUT_GATE, port, &mut mctx)
+                    .send_message(msg, self.id, IN_OUT_GATE, port, &mut ctx.mctx)
             }
             IN_OUT_GATE => {
-                let mut mctx = crate::connection::connection::HandleContext {
-                    time: ctx.time,
-                    id_reg: ctx.id_reg,
-                    prng: ctx.prng,
-                };
                 ctx.connections
-                    .send_message(msg, self.id, SPLIT_OUT_GATE, port, &mut mctx)
+                    .send_message(msg, self.id, SPLIT_OUT_GATE, port, &mut ctx.mctx)
             }
             SPLIT_OUT_GATE => panic!("Should not receive messages on SPLIT_OUT_GATE"),
             _ => panic!("Should not receive messages on other gates"),

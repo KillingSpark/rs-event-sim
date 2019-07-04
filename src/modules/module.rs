@@ -1,17 +1,13 @@
-use crate::clock::Clock;
 use crate::event::{Event, TimerEvent};
-use crate::messages::message::Message;
+use crate::messages::message::{Message};
+use crate::connection::connection;
 use crate::connection::mesh::ConnectionMesh;
-use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{ModuleId, ModuleTypeId, PortId, GateId};
 
 pub struct HandleContext<'a> {
-    pub time: &'a Clock,
-    pub id_reg: &'a mut IdRegistrar,
-
     pub connections: &'a mut ConnectionMesh,
     pub timer_queue: &'a mut std::collections::BinaryHeap<TimerEvent>,
-    pub prng: &'a mut rand::prng::XorShiftRng,
+    pub mctx: connection::HandleContext<'a>,
 }
 
 pub struct HandleResult {

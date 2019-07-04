@@ -54,40 +54,35 @@ impl Module for RatePuller {
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             IN_GATE => {
-                if ctx.time.now() - self.last_time_requested > self.rate {
-                    self.last_time_requested = ctx.time.now();
+                if ctx.mctx.time.now() - self.last_time_requested > self.rate {
+                    self.last_time_requested = ctx.mctx.time.now();
                     let sig = Box::new(crate::messages::text_message::new_text_msg(
-                        ctx.id_reg,
+                        ctx.mctx.id_reg,
                         "New Message Plz".to_owned(),
                     ));
                     let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.time,
-                        id_reg: ctx.id_reg,
-                        prng: ctx.prng,
+                        time: ctx.mctx.time,
+                        id_reg: ctx.mctx.id_reg,
+                        prng: ctx.mctx.prng,
                     };
                     ctx.connections
                         .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
                 } else {
                     let time_till_next_pull =
-                        self.rate - (ctx.time.now() - self.last_time_requested);
+                        self.rate - (ctx.mctx.time.now() - self.last_time_requested);
                     ctx.timer_queue.push(TimerEvent {
-                        time: ctx.time.now() + time_till_next_pull,
+                        time: ctx.mctx.time.now() + time_till_next_pull,
                         mod_id: self.id,
 
                         event: Box::new(text_event::new_text_event(
-                            ctx.id_reg,
+                            ctx.mctx.id_reg,
                             "Pull new message".to_owned(),
                         )),
                     });
                 }
 
-                let mut mctx = crate::connection::connection::HandleContext {
-                    time: ctx.time,
-                    id_reg: ctx.id_reg,
-                    prng: ctx.prng,
-                };
                 ctx.connections
-                    .send_message(msg, self.id, OUT_GATE, port, &mut mctx);
+                    .send_message(msg, self.id, OUT_GATE, port, &mut ctx.mctx);
             }
             OUT_GATE => panic!("Should never receive message on OUT_GATE"),
             _ => panic!("Should never receive message on other gate"),
@@ -102,13 +97,13 @@ impl Module for RatePuller {
         ctx: &mut HandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         let sig = Box::new(crate::messages::text_message::new_text_msg(
-            ctx.id_reg,
+            ctx.mctx.id_reg,
             "New Message Plz".to_owned(),
         ));
         let mut mctx = crate::connection::connection::HandleContext {
-            time: ctx.time,
-            id_reg: ctx.id_reg,
-            prng: ctx.prng,
+            time: ctx.mctx.time,
+            id_reg: ctx.mctx.id_reg,
+            prng: ctx.mctx.prng,
         };
         ctx.connections
             .send_message(sig, self.id, TRIG_GATE, PortId(0), &mut mctx);
@@ -132,13 +127,13 @@ impl Module for RatePuller {
         // initial request for a message
         for port in ctx.connections.get_ports(self.id, TRIG_GATE).unwrap() {
             let sig = Box::new(crate::messages::text_message::new_text_msg(
-                ctx.id_reg,
+                ctx.mctx.id_reg,
                 "New Message Plz".to_owned(),
             ));
             let mut mctx = crate::connection::connection::HandleContext {
-                time: ctx.time,
-                id_reg: ctx.id_reg,
-                prng: ctx.prng,
+                time: ctx.mctx.time,
+                id_reg: ctx.mctx.id_reg,
+                prng: ctx.mctx.prng,
             };
             ctx.connections
                 .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);

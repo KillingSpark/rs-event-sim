@@ -1,4 +1,5 @@
 use crate::clock;
+use crate::connection::connection;
 use crate::connection::connection::Connection;
 use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
@@ -142,11 +143,14 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 impl Runner {
     pub fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut ctx = HandleContext {
-            time: &self.clock,
-            id_reg: id_reg,
             connections: &mut self.connections,
             timer_queue: &mut self.timer_queue,
-            prng: &mut self.prng,
+
+            mctx: connection::HandleContext {
+                prng: &mut self.prng,
+                id_reg: id_reg,
+                time: &self.clock,
+            },
         };
 
         self.modules.init_modules(&mut ctx);
@@ -154,11 +158,14 @@ impl Runner {
 
     pub fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut ctx = HandleContext {
-            time: &self.clock,
-            id_reg: id_reg,
             connections: &mut self.connections,
             timer_queue: &mut self.timer_queue,
-            prng: &mut self.prng,
+
+            mctx: connection::HandleContext {
+                prng: &mut self.prng,
+                id_reg: id_reg,
+                time: &self.clock,
+            },
         };
 
         self.modules.finalize_modules(
@@ -257,11 +264,14 @@ impl Runner {
 
             let tmsg = self.connections.messages.pop().unwrap();
             let mut ctx = HandleContext {
-                time: &self.clock,
-                id_reg: id_reg,
                 connections: &mut self.connections,
                 timer_queue: &mut self.timer_queue,
-                prng: &mut self.prng,
+
+                mctx: connection::HandleContext {
+                    prng: &mut self.prng,
+                    id_reg: id_reg,
+                    time: &self.clock,
+                },
             };
             self.modules
                 .modules
@@ -279,11 +289,14 @@ impl Runner {
 
             let tmsg = self.connections.messages_now.pop_front().unwrap();
             let mut ctx = HandleContext {
-                time: &self.clock,
-                id_reg: id_reg,
                 connections: &mut self.connections,
                 timer_queue: &mut self.timer_queue,
-                prng: &mut self.prng,
+
+                mctx: connection::HandleContext {
+                    prng: &mut self.prng,
+                    id_reg: id_reg,
+                    time: &self.clock,
+                },
             };
             self.modules
                 .modules
@@ -321,11 +334,14 @@ impl Runner {
                 ),
             };
             let mut ctx = HandleContext {
-                time: &self.clock,
-                id_reg: id_reg,
                 connections: &mut self.connections,
                 timer_queue: &mut self.timer_queue,
-                prng: &mut self.prng,
+
+                mctx: connection::HandleContext {
+                    prng: &mut self.prng,
+                    id_reg: id_reg,
+                    time: &self.clock,
+                },
             };
 
             let result = module.handle_timer_event(ev.event.as_ref(), &mut ctx);
