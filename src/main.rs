@@ -5,6 +5,8 @@ mod id_mngmnt;
 mod messages;
 mod modules;
 mod runner;
+mod factory;
+mod ned_parser;
 
 use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::GateId;
