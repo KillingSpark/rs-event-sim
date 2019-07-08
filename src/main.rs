@@ -99,7 +99,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     r.add_module(smod).unwrap();
     r.add_to_tree(runner::Tree::Leaf(("Source".to_owned(), smod_id)));
 
-    let num_groups = 3;
+    let num_groups = 1000;
     let mut groups = Vec::new();
 
     for _ in 0..num_groups {
@@ -187,6 +187,6 @@ fn main() {
     let mut f = File::create("graph.dot").unwrap();
     r.print_as_dot(&mut f);
 
-    r.run(&mut id_reg, 100).unwrap();
+    r.run(&mut id_reg, 10000).unwrap();
 
 }
