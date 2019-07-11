@@ -1,4 +1,5 @@
 use crate::connection::connection::*;
+use crate::contexts::SimulationContext;
 use crate::id_mngmnt::id_types::{ConnectionId, GateId, ModuleId, PortId};
 use crate::messages::message::{Message, TimedMessage};
 
@@ -118,7 +119,7 @@ impl ConnectionMesh {
         sender_mod_id: ModuleId,
         gate_id: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut SimulationContext,
     ) {
         let out_port = match &self.gates.get(&sender_mod_id) {
             Some(gates) => match gates.get(&gate_id) {

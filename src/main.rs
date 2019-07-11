@@ -7,6 +7,7 @@ mod modules;
 mod runner;
 mod factory;
 mod ned_parser;
+mod contexts;
 
 use id_mngmnt::id_registrar::IdRegistrar;
 use id_mngmnt::id_types::GateId;

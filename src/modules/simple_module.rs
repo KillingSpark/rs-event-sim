@@ -4,7 +4,8 @@ use crate::events::text_event::{new_text_event, TextEvent};
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::messages::text_message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 
 pub struct SimpleModule {
     pub type_id: ModuleTypeId,
@@ -44,7 +45,7 @@ pub fn new_simple_module(
 }
 
 impl SimpleModule {
-    fn send_to_all(&mut self, ctx: &mut HandleContext) {
+    fn send_to_all(&mut self, ctx: &mut EventHandleContext) {
         for port in &self.ports {
             let sig = Box::new(text_message::new_text_msg(
                 ctx.mctx.id_reg,
@@ -67,7 +68,7 @@ impl Module for SimpleModule {
         _msg: Box<Message>,
         _gate: GateId,
         _port: PortId,
-        _ctx: &mut HandleContext,
+        _ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         //println!(
         //    "SimpleModule with ID: {} swallowed message with ID: {}!",
@@ -81,7 +82,7 @@ impl Module for SimpleModule {
     fn handle_timer_event(
         &mut self,
         ev: &Event,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         if self.msg_time != ctx.mctx.time.now() {
             self.msg_counter = 0;
@@ -154,7 +155,7 @@ impl Module for SimpleModule {
     fn initialize(
         &mut self,
         gates: &std::collections::HashMap<GateId, Gate>,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) {
         self.ports = gates
             .get(&OUT_GATE)
@@ -171,7 +172,7 @@ impl Module for SimpleModule {
         });
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize SimpleModule: {}", self.id.raw());
         Some(FinalizeResult {
             results: vec![(

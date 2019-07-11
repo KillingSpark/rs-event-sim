@@ -1,4 +1,4 @@
-use crate::connection::connection::HandleContext;
+use crate::contexts::SimulationContext;
 use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId};
 use crate::messages::message::Message;
 use rand::RngCore;
@@ -38,7 +38,7 @@ impl crate::connection::connection::Connection for SimpleConnection {
     fn handle_message(
         &mut self,
         message: Box<Message>,
-        ctx: &mut HandleContext,
+        ctx: &mut SimulationContext,
     ) -> Option<(u64, Box<Message>)> {
         if ctx.prng.next_u64() & 10000 < self.drop_chance {
             return None;

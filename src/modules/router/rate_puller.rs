@@ -3,7 +3,8 @@ use crate::event::{Event, TimerEvent};
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 use crate::text_event;
 
 pub struct RatePuller {
@@ -53,7 +54,7 @@ impl Module for RatePuller {
         msg: Box<Message>,
         gate: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             IN_GATE => {
@@ -91,7 +92,7 @@ impl Module for RatePuller {
     fn handle_timer_event(
         &mut self,
         _ev: &Event,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         let sig = Box::new(crate::messages::text_message::new_text_msg(
             ctx.mctx.id_reg,
@@ -118,7 +119,7 @@ impl Module for RatePuller {
     fn initialize(
         &mut self,
         gates: &std::collections::HashMap<GateId, Gate>,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) {
         // initial request for a message
         self.ports = gates
@@ -139,7 +140,7 @@ impl Module for RatePuller {
         }
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);
         None
     }

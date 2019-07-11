@@ -1,12 +1,12 @@
 use crate::clock;
-use crate::connection::connection;
 use crate::connection::connection::Connection;
 use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::{EventHandleContext, SimulationContext};
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
@@ -25,7 +25,7 @@ struct ModuleMngr {
 }
 
 impl ModuleMngr {
-    fn finalize_modules(&mut self, tree: &Tree<(String, ModuleId)>, ctx: &mut HandleContext) {
+    fn finalize_modules(&mut self, tree: &Tree<(String, ModuleId)>, ctx: &mut EventHandleContext) {
         let mut global_results = Vec::new();
 
         match tree {
@@ -50,7 +50,7 @@ impl ModuleMngr {
     fn finalize_modules_rec(
         &mut self,
         tree: &Tree<(String, ModuleId)>,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Option<FinalizeResult> {
         let mut local_results = FinalizeResult {
             results: Vec::new(),
@@ -139,11 +139,11 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 
 impl Runner {
     pub fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut ctx = HandleContext {
+        let mut ctx = EventHandleContext {
             msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
-            mctx: connection::HandleContext {
+            mctx: SimulationContext {
                 prng: &mut self.prng,
                 id_reg: id_reg,
                 time: &self.clock,
@@ -170,11 +170,11 @@ impl Runner {
     }
 
     pub fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut ctx = HandleContext {
+        let mut ctx = EventHandleContext {
             msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
-            mctx: connection::HandleContext {
+            mctx: SimulationContext {
                 prng: &mut self.prng,
                 id_reg: id_reg,
                 time: &self.clock,
@@ -276,11 +276,11 @@ impl Runner {
             }
 
             let tmsg = self.connections.messages.pop().unwrap();
-            let mut ctx = HandleContext {
+            let mut ctx = EventHandleContext {
                 msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,
@@ -309,11 +309,11 @@ impl Runner {
             }
 
             let tmsg = self.connections.messages_now.pop_front().unwrap();
-            let mut ctx = HandleContext {
+            let mut ctx = EventHandleContext {
                 msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,
@@ -360,11 +360,11 @@ impl Runner {
                     ev.mod_id.raw(),
                 ),
             };
-            let mut ctx = HandleContext {
+            let mut ctx = EventHandleContext {
                 msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,

@@ -1,17 +1,12 @@
 use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, GateId, ModuleId, PortId};
 use crate::messages::message::{Message};
-
-pub struct HandleContext<'a> {
-    pub time: &'a crate::clock::Clock,
-    pub id_reg: &'a mut crate::id_mngmnt::id_registrar::IdRegistrar,
-    pub prng: &'a mut rand::prng::XorShiftRng,
-}
+use crate::contexts::SimulationContext;
 
 pub trait Connection {
     fn handle_message(
         &mut self,
         message: Box<Message>,
-        ctx: &mut HandleContext,
+        ctx: &mut SimulationContext,
     ) -> Option<(u64, Box<Message>)>;
 
     fn connection_id(&self) -> ConnectionId;
