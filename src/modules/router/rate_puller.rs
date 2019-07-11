@@ -1,10 +1,10 @@
+use crate::connection::connection::Gate;
 use crate::event::{Event, TimerEvent};
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 use crate::text_event;
-use crate::connection::connection::Gate;
 
 pub struct RatePuller {
     type_id: ModuleTypeId,
@@ -63,11 +63,7 @@ impl Module for RatePuller {
                         ctx.mctx.id_reg,
                         "New Message Plz".to_owned(),
                     ));
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.mctx.time,
-                        id_reg: ctx.mctx.id_reg,
-                        prng: ctx.mctx.prng,
-                    };
+
                     ctx.msgs_to_send.push_back((sig, TRIG_GATE, port));
                 } else {
                     let time_till_next_pull =
@@ -101,11 +97,7 @@ impl Module for RatePuller {
             ctx.mctx.id_reg,
             "New Message Plz".to_owned(),
         ));
-        let mut mctx = crate::connection::connection::HandleContext {
-            time: ctx.mctx.time,
-            id_reg: ctx.mctx.id_reg,
-            prng: ctx.mctx.prng,
-        };
+
         ctx.msgs_to_send.push_back((sig, TRIG_GATE, PortId(0)));
 
         Ok(HandleResult {})
@@ -123,16 +115,26 @@ impl Module for RatePuller {
         self.name.clone()
     }
 
-    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, ctx: &mut HandleContext) {
+    fn initialize(
+        &mut self,
+        gates: &std::collections::HashMap<GateId, Gate>,
+        ctx: &mut HandleContext,
+    ) {
         // initial request for a message
-        self.ports = gates.get(&TRIG_GATE).unwrap().ports.keys().map(|id| *id).collect();
-        
+        self.ports = gates
+            .get(&TRIG_GATE)
+            .unwrap()
+            .ports
+            .keys()
+            .map(|id| *id)
+            .collect();
+
         for port in &self.ports {
             let sig = Box::new(crate::messages::text_message::new_text_msg(
                 ctx.mctx.id_reg,
                 "New Message Plz".to_owned(),
             ));
-            
+
             ctx.msgs_to_send.push_back((sig, TRIG_GATE, *port));
         }
     }

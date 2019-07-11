@@ -1,8 +1,8 @@
-use crate::event::{Event};
+use crate::connection::connection::Gate;
+use crate::event::Event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
-use crate::connection::connection::Gate;
+use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
@@ -20,7 +20,10 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_echo_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, name: String) -> EchoModule {
+pub fn new_echo_module(
+    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    name: String,
+) -> EchoModule {
     EchoModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
@@ -47,14 +50,8 @@ impl Module for EchoModule {
         //    self.id.raw(),
         //    msg.msg_id().raw(),
         //);
-        let mut mctx = crate::connection::connection::HandleContext {
-            time: ctx.mctx.time,
-            id_reg: ctx.mctx.id_reg,
-            prng: ctx.mctx.prng,
-        };
-        ctx.msgs_to_send
-            .push_back((msg, gate, port));
-        self.msgs_echoed +=1;
+        ctx.msgs_to_send.push_back((msg, gate, port));
+        self.msgs_echoed += 1;
 
         Ok(HandleResult {})
     }
@@ -85,13 +82,21 @@ impl Module for EchoModule {
         self.name.clone()
     }
 
-    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, _ctx: &mut HandleContext) {
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, Gate>,
+        _ctx: &mut HandleContext,
+    ) {
     }
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalize Echo: {}", self.id.raw());
-        Some(FinalizeResult{
-            results: vec![(self.name(), "echoed_msgs".to_owned(), self.msgs_echoed.to_string())]
+        Some(FinalizeResult {
+            results: vec![(
+                self.name(),
+                "echoed_msgs".to_owned(),
+                self.msgs_echoed.to_string(),
+            )],
         })
     }
 }

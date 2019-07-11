@@ -1,10 +1,9 @@
+use crate::connection::connection::Gate;
 use crate::event::Event;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
-use crate::connection::connection::Gate;
-
 
 use crate::connection::mesh::ConnectionKind;
 use crate::connection::simple_connection;
@@ -12,8 +11,8 @@ use crate::modules::container;
 use crate::modules::queue;
 use crate::modules::router::rate_puller;
 use crate::modules::splitter;
-use crate::runner::Runner;
 use crate::runner;
+use crate::runner::Runner;
 
 pub struct Router {
     type_id: ModuleTypeId,
@@ -64,7 +63,11 @@ pub fn make_router(
     name: String,
     routing_table: std::collections::HashMap<PortId, PortId>,
 ) -> (ModuleId, runner::Tree<(String, ModuleId)>) {
-    let container = Box::new(container::new_module_container(id_reg, name.clone(), vec![(ROUTER_GATE_INNER, ROUTER_GATE_OUTER)]));
+    let container = Box::new(container::new_module_container(
+        id_reg,
+        name.clone(),
+        vec![(ROUTER_GATE_INNER, ROUTER_GATE_OUTER)],
+    ));
     let container_id = container.module_id();
 
     let router = Box::new(new(id_reg, "RouterCore".to_owned(), routing_table));
@@ -181,7 +184,10 @@ pub fn make_router(
         .unwrap();
     }
 
-    (container_id, runner::Tree::Node((name, container_id), children))
+    (
+        container_id,
+        runner::Tree::Node((name, container_id), children),
+    )
 }
 
 impl Module for Router {
@@ -199,8 +205,7 @@ impl Module for Router {
         match gate {
             IN_GATE => match self.routing_table.get(&port) {
                 Some(out_port) => {
-                    ctx.msgs_to_send
-                        .push_back((msg, OUT_GATE, *out_port));
+                    ctx.msgs_to_send.push_back((msg, OUT_GATE, *out_port));
                 }
                 None => {
                     //println!(
@@ -236,7 +241,12 @@ impl Module for Router {
         self.name.clone()
     }
 
-    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, _ctx: &mut HandleContext) {}
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, Gate>,
+        _ctx: &mut HandleContext,
+    ) {
+    }
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);

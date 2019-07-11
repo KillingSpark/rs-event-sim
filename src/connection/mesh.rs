@@ -112,17 +112,6 @@ impl ConnectionMesh {
         Ok(())
     }
 
-    pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
-        match self.gates.get(&mod_id).unwrap().get(&gate_id) {
-            Some(gate) => {
-                let mut keys: Vec<PortId> = gate.ports.keys().map(|key_ref| *key_ref).collect();
-                keys.sort();
-                Some(keys)
-            }
-            None => None,
-        }
-    }
-
     pub fn send_message(
         &mut self,
         msg: Box<Message>,

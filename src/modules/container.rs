@@ -1,8 +1,8 @@
+use crate::connection::connection::Gate;
 use crate::event::Event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
-use crate::connection::connection::Gate;
 
 pub struct ModuleContainer {
     pub type_id: ModuleTypeId,
@@ -60,14 +60,7 @@ impl ModuleContainer {
 
         match redirect_gate {
             Some(redirect_gate) => {
-                let mut mctx = crate::connection::connection::HandleContext {
-                    time: ctx.mctx.time,
-                    id_reg: ctx.mctx.id_reg,
-                    prng: ctx.mctx.prng,
-                };
-
-                ctx.msgs_to_send
-                    .push_back((msg, *redirect_gate, port));
+                ctx.msgs_to_send.push_back((msg, *redirect_gate, port));
             }
             None => {
                 panic!("No gate found");
@@ -78,8 +71,8 @@ impl ModuleContainer {
 
 impl Module for ModuleContainer {
     fn get_gate_ids(&self) -> Vec<GateId> {
-        let mut gates = Vec::with_capacity(self.inner_to_outer_gates.len()*2);
-        for (i,o) in &self.inner_to_outer_gates {
+        let mut gates = Vec::with_capacity(self.inner_to_outer_gates.len() * 2);
+        for (i, o) in &self.inner_to_outer_gates {
             gates.push(*i);
             gates.push(*o);
         }
@@ -118,7 +111,12 @@ impl Module for ModuleContainer {
         self.id
     }
 
-    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, _ctx: &mut HandleContext) {}
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, Gate>,
+        _ctx: &mut HandleContext,
+    ) {
+    }
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalized: {}, {}", &self.name, self.id.raw());

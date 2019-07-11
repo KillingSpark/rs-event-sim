@@ -1,7 +1,6 @@
 use crate::clock;
 use crate::connection::connection;
 use crate::connection::connection::Connection;
-use crate::connection::connection::Gate;
 use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
@@ -46,16 +45,6 @@ impl ModuleMngr {
         //for (mname, fname, val) in global_results {
         //    println!("{} {} {}", mname, fname, val);
         //}
-    }
-
-    fn init_modules(
-        &mut self,
-        gates: &std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
-        ctx: &mut HandleContext,
-    ) {
-        self.modules.iter_mut().for_each(|(_, module)| {
-            module.initialize(gates.get(&module.module_id()).unwrap(), ctx);
-        });
     }
 
     fn finalize_modules_rec(
