@@ -4,6 +4,7 @@ use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 use crate::text_event;
+use crate::connection::connection::Gate;
 
 pub struct RatePuller {
     type_id: ModuleTypeId,
@@ -12,6 +13,7 @@ pub struct RatePuller {
 
     rate: u64, //how often to request a message
     last_time_requested: u64,
+    ports: Vec<PortId>,
 }
 
 //messages get sent out here (and buffered)
@@ -37,6 +39,7 @@ pub fn new(id_reg: &mut IdRegistrar, name: String, rate: u64) -> RatePuller {
 
         rate: rate,
         last_time_requested: 0,
+        ports: Vec::new(),
     }
 }
 
@@ -65,8 +68,7 @@ impl Module for RatePuller {
                         id_reg: ctx.mctx.id_reg,
                         prng: ctx.mctx.prng,
                     };
-                    ctx.connections
-                        .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
+                    ctx.msgs_to_send.push_back((sig, TRIG_GATE, port));
                 } else {
                     let time_till_next_pull =
                         self.rate - (ctx.mctx.time.now() - self.last_time_requested);
@@ -81,8 +83,7 @@ impl Module for RatePuller {
                     });
                 }
 
-                ctx.connections
-                    .send_message(msg, self.id, OUT_GATE, port, &mut ctx.mctx);
+                ctx.msgs_to_send.push_back((msg, OUT_GATE, port));
             }
             OUT_GATE => panic!("Should never receive message on OUT_GATE"),
             _ => panic!("Should never receive message on other gate"),
@@ -105,10 +106,9 @@ impl Module for RatePuller {
             id_reg: ctx.mctx.id_reg,
             prng: ctx.mctx.prng,
         };
-        ctx.connections
-            .send_message(sig, self.id, TRIG_GATE, PortId(0), &mut mctx);
+        ctx.msgs_to_send.push_back((sig, TRIG_GATE, PortId(0)));
 
-        Ok(HandleResult{})
+        Ok(HandleResult {})
     }
 
     fn module_type_id(&self) -> ModuleTypeId {
@@ -123,20 +123,17 @@ impl Module for RatePuller {
         self.name.clone()
     }
 
-    fn initialize(&mut self, ctx: &mut HandleContext) {
+    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, ctx: &mut HandleContext) {
         // initial request for a message
-        for port in ctx.connections.get_ports(self.id, TRIG_GATE).unwrap() {
+        self.ports = gates.get(&TRIG_GATE).unwrap().ports.keys().map(|id| *id).collect();
+        
+        for port in &self.ports {
             let sig = Box::new(crate::messages::text_message::new_text_msg(
                 ctx.mctx.id_reg,
                 "New Message Plz".to_owned(),
             ));
-            let mut mctx = crate::connection::connection::HandleContext {
-                time: ctx.mctx.time,
-                id_reg: ctx.mctx.id_reg,
-                prng: ctx.mctx.prng,
-            };
-            ctx.connections
-                .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
+            
+            ctx.msgs_to_send.push_back((sig, TRIG_GATE, *port));
         }
     }
 

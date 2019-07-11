@@ -1,3 +1,4 @@
+use crate::connection::connection::Gate;
 use crate::event::{Event, TimerEvent};
 use crate::events::text_event::{new_text_event, TextEvent};
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
@@ -9,6 +10,7 @@ pub struct SimpleModule {
     pub type_id: ModuleTypeId,
     pub id: ModuleId,
     pub name: String,
+    ports: Vec<PortId>,
 
     pub msg_counter: u64,
     pub msg_time: u64,
@@ -37,28 +39,21 @@ pub fn new_simple_module(
         msg_time: 0,
 
         messages_sent: 0,
+        ports: Vec::new(),
     }
 }
 
 impl SimpleModule {
     fn send_to_all(&mut self, ctx: &mut HandleContext) {
-        let ports = ctx.connections.get_ports(self.module_id(), OUT_GATE);
-
-        match ports {
-            Some(ports) => {
-                for port in ports {
-                    let sig = Box::new(text_message::new_text_msg(
-                        ctx.mctx.id_reg,
-                        "Received Event".to_owned(),
-                    ));
-                    ctx.connections
-                        .send_message(sig, self.id, OUT_GATE, port, &mut ctx.mctx);
-                    self.messages_sent += 1;
-                }
-                self.msg_counter += 1;
-            }
-            None => {}
+        for port in &self.ports {
+            let sig = Box::new(text_message::new_text_msg(
+                ctx.mctx.id_reg,
+                "Received Event".to_owned(),
+            ));
+            ctx.msgs_to_send.push_back((sig, OUT_GATE, *port));
+            self.messages_sent += 1;
         }
+        self.msg_counter += 1;
     }
 }
 
@@ -93,7 +88,11 @@ impl Module for SimpleModule {
             self.msg_time = ctx.mctx.time.now();
         }
 
-        let te_type = ctx.mctx.id_reg.lookup_event_id("TextEvent".to_owned()).unwrap();
+        let te_type = ctx
+            .mctx
+            .id_reg
+            .lookup_event_id("TextEvent".to_owned())
+            .unwrap();
         if self.msg_counter == 0 {
             //println!(
             //    "Module with Id: {} Handled timer event: {}",
@@ -115,7 +114,8 @@ impl Module for SimpleModule {
             } else {
                 println!(
                     "Was {}. Dont know what to do with it though.",
-                    ctx.mctx.id_reg
+                    ctx.mctx
+                        .id_reg
                         .lookup_event_id_reverse(ev.event_type_id())
                         .unwrap()
                 );
@@ -151,7 +151,19 @@ impl Module for SimpleModule {
         self.name.clone()
     }
 
-    fn initialize(&mut self, ctx: &mut HandleContext) {
+    fn initialize(
+        &mut self,
+        gates: &std::collections::HashMap<GateId, Gate>,
+        ctx: &mut HandleContext,
+    ) {
+        self.ports = gates
+            .get(&OUT_GATE)
+            .unwrap()
+            .ports
+            .keys()
+            .map(|id| *id)
+            .collect();
+
         ctx.timer_queue.push(TimerEvent {
             time: 10,
             mod_id: self.id,

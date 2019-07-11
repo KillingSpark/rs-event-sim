@@ -3,6 +3,7 @@ use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::connection::connection::Gate;
 
 
 use crate::connection::mesh::ConnectionKind;
@@ -23,10 +24,10 @@ pub struct Router {
 }
 
 //messages get sent out here (and buffered)
-pub const OUT_GATE: GateId = GateId(0);
+pub const OUT_GATE: GateId = GateId(100);
 
 //messages are received here, processed and sent to the out-buffer on the respective port
-pub const IN_GATE: GateId = GateId(1);
+pub const IN_GATE: GateId = GateId(200);
 
 pub static TYPE_STR: &str = "RouterModule";
 
@@ -198,8 +199,8 @@ impl Module for Router {
         match gate {
             IN_GATE => match self.routing_table.get(&port) {
                 Some(out_port) => {
-                    ctx.connections
-                        .send_message(msg, self.id, OUT_GATE, *out_port, &mut ctx.mctx);
+                    ctx.msgs_to_send
+                        .push_back((msg, OUT_GATE, *out_port));
                 }
                 None => {
                     //println!(
@@ -235,7 +236,7 @@ impl Module for Router {
         self.name.clone()
     }
 
-    fn initialize(&mut self, _ctx: &mut HandleContext) {}
+    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, _ctx: &mut HandleContext) {}
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);

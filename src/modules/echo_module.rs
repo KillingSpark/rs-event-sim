@@ -2,6 +2,7 @@ use crate::event::{Event};
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
 use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
+use crate::connection::connection::Gate;
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
@@ -51,8 +52,8 @@ impl Module for EchoModule {
             id_reg: ctx.mctx.id_reg,
             prng: ctx.mctx.prng,
         };
-        ctx.connections
-            .send_message(msg, self.id, gate, port, &mut mctx);
+        ctx.msgs_to_send
+            .push_back((msg, gate, port));
         self.msgs_echoed +=1;
 
         Ok(HandleResult {})
@@ -84,7 +85,7 @@ impl Module for EchoModule {
         self.name.clone()
     }
 
-    fn initialize(&mut self, _ctx: &mut HandleContext) {
+    fn initialize(&mut self, gates: &std::collections::HashMap<GateId, Gate>, _ctx: &mut HandleContext) {
     }
 
     fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {

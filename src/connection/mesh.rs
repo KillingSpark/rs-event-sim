@@ -131,15 +131,18 @@ impl ConnectionMesh {
         port: PortId,
         ctx: &mut HandleContext,
     ) {
-        let out_port = &self
-            .gates
-            .get(&sender_mod_id)
-            .unwrap()
-            .get(&gate_id)
-            .unwrap()
-            .ports
-            .get(&port)
-            .unwrap();
+        let out_port = match &self.gates.get(&sender_mod_id) {
+            Some(gates) => match gates.get(&gate_id) {
+                Some(gate) => match gate.ports.get(&port) {
+                    Some(port) => port,
+                    None => panic!("illegale port {}", port.0),
+                },
+                None => panic!("illegale gateid {}", gate_id.0),
+            },
+            None => {
+                panic!("illegale module {}", sender_mod_id.0);
+            }
+        };
 
         match out_port.kind {
             PortKind::In => {

@@ -1,10 +1,12 @@
 use crate::clock;
 use crate::connection::connection;
 use crate::connection::connection::Connection;
+use crate::connection::connection::Gate;
 use crate::connection::mesh::ConnectionMesh;
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
+use crate::messages::message::Message;
 use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
 
 use rand::prng::XorShiftRng;
@@ -46,9 +48,13 @@ impl ModuleMngr {
         //}
     }
 
-    fn init_modules(&mut self, ctx: &mut HandleContext) {
+    fn init_modules(
+        &mut self,
+        gates: &std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
+        ctx: &mut HandleContext,
+    ) {
         self.modules.iter_mut().for_each(|(_, module)| {
-            module.initialize(ctx);
+            module.initialize(gates.get(&module.module_id()).unwrap(), ctx);
         });
     }
 
@@ -109,6 +115,7 @@ pub struct Runner {
     clock: clock::Clock,
 
     timer_queue: std::collections::BinaryHeap<TimerEvent>,
+    msg_buffer: std::collections::VecDeque<(Box<Message>, GateId, PortId)>,
 
     pub connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
@@ -125,6 +132,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
             modules: std::collections::HashMap::new(),
         },
         timer_queue: std::collections::BinaryHeap::new(),
+        msg_buffer: std::collections::VecDeque::new(),
 
         connections: ConnectionMesh {
             connections: std::collections::HashMap::new(),
@@ -143,7 +151,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 impl Runner {
     pub fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut ctx = HandleContext {
-            connections: &mut self.connections,
+            msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
             mctx: connection::HandleContext {
@@ -153,12 +161,28 @@ impl Runner {
             },
         };
 
-        self.modules.init_modules(&mut ctx);
+        for (_, module) in &mut self.modules.modules {
+            (*module).initialize(&self.connections.gates.get(&module.module_id()).unwrap(), &mut ctx);
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                println!(
+                    "Type {}",
+                    ctx.mctx
+                        .id_reg
+                        .type_ids_reverse
+                        .get(&module.module_type_id().0)
+                        .unwrap()
+                );
+                println!("Msgs: {}", ctx.msgs_to_send.len());
+                self.connections
+                    .send_message(msg, module.module_id(), gate, port, &mut ctx.mctx);
+            }
+        };
     }
 
     pub fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
         let mut ctx = HandleContext {
-            connections: &mut self.connections,
+            msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
             mctx: connection::HandleContext {
@@ -264,7 +288,7 @@ impl Runner {
 
             let tmsg = self.connections.messages.pop().unwrap();
             let mut ctx = HandleContext {
-                connections: &mut self.connections,
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
                 mctx: connection::HandleContext {
@@ -273,12 +297,20 @@ impl Runner {
                     time: &self.clock,
                 },
             };
+
             self.modules
                 .modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
                 .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
+
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                self.connections
+                    .send_message(msg, tmsg.recipient, gate, port, &mut ctx.mctx);
+            }
+
             msg_counter += 1;
         }
 
@@ -289,7 +321,7 @@ impl Runner {
 
             let tmsg = self.connections.messages_now.pop_front().unwrap();
             let mut ctx = HandleContext {
-                connections: &mut self.connections,
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
                 mctx: connection::HandleContext {
@@ -304,6 +336,12 @@ impl Runner {
                 .unwrap()
                 .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
+
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                self.connections
+                    .send_message(msg, tmsg.recipient, gate, port, &mut ctx.mctx);
+            }
             msg_counter += 1;
         }
 
@@ -334,7 +372,7 @@ impl Runner {
                 ),
             };
             let mut ctx = HandleContext {
-                connections: &mut self.connections,
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
                 mctx: connection::HandleContext {
@@ -348,6 +386,17 @@ impl Runner {
             match result {
                 Err(e) => return Err(e),
                 Ok(res) => {
+                    while ctx.msgs_to_send.len() > 0 {
+                        let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                        
+                        self.connections.send_message(
+                            msg,
+                            module.module_id(),
+                            gate,
+                            port,
+                            &mut ctx.mctx,
+                        );
+                    }
                     self.process_result(res);
                 }
             }
@@ -504,14 +553,14 @@ impl Runner {
                                 .write(
                                     format!(
                                         "\t{} -> {}[label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
-                                            mod_id.raw(),
-                                            port.rcv_mod.raw(),
-                                            mod_id.raw(),
-                                            gate_id.0,
-                                            port_id.0,
-                                            port.rcv_mod.raw(),
-                                            port.rcv_gate.0,
-                                            port.rcv_port.0,
+                                        mod_id.raw(),
+                                        port.rcv_mod.raw(),
+                                        mod_id.raw(),
+                                        gate_id.0,
+                                        port_id.0,
+                                        port.rcv_mod.raw(),
+                                        port.rcv_gate.0,
+                                        port.rcv_port.0,
                                     )
                                     .as_bytes(),
                                 )
