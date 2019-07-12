@@ -1,5 +1,7 @@
 use crate::core::clock;
 use crate::core::connection::connection::Connection;
+use crate::core::connection::connection::PortKind;
+use crate::core::connection::mesh;
 use crate::core::connection::mesh::ConnectionMesh;
 use crate::core::contexts::{EventHandleContext, SimulationContext};
 use crate::core::events::event::TimerEvent;
@@ -7,8 +9,6 @@ use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 use crate::core::id_mngmnt::id_types::{GateId, ModuleId, PortId};
 use crate::core::messages::message::Message;
 use crate::core::modules::module::{FinalizeResult, Module};
-use crate::core::connection::mesh;
-use crate::core::connection::connection::PortKind;
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
@@ -546,13 +546,35 @@ impl Runner {
     }
 
     #[allow(dead_code)]
-    pub fn print_as_dot(&self, target: &mut Write) {
+    pub fn print_as_dot(&self, id: Option<ModuleId>, target: &mut Write) {
         target.write("digraph {\n".as_bytes()).unwrap();
-        for m in &self.module_forest {
-            print_parent_as_dot("\t", m, target);
+        let mut modules = Vec::new();
+
+        match id {
+            Some(id) => {
+                for m in &self.module_forest {
+                    match find_node(m, id) {
+                        Some(node) => {
+                            print_parent_as_dot("\t", node, target, &mut modules, 0, 2);
+                            break;
+                        }
+                        None => {
+                            continue;
+                        }
+                    }
+                }
+            }
+            None => {
+                for m in &self.module_forest {
+                    print_parent_as_dot("\t", m, target, &mut modules, 0, 1);
+                }
+            }
         }
 
         for ((mod_id, gate_id, port_id), port) in &self.connections.gates {
+            if !(modules.contains(mod_id) && modules.contains(&port.rcv_mod)) {
+                continue;
+            }
             match port.kind {
                 PortKind::In => { /*ignore */ }
                 PortKind::Out => {
@@ -599,10 +621,47 @@ impl Runner {
     }
 }
 
+fn find_node(
+    tree: &Tree<(String, ModuleId)>,
+    find_id: ModuleId,
+) -> Option<&Tree<(String, ModuleId)>> {
+    match tree {
+        Tree::Node((_, id), children) => {
+            if find_id == *id {
+                return Some(tree);
+            }
+            for c in children {
+                match find_node(c, find_id) {
+                    Some(t) => return Some(t),
+                    None => continue,
+                }
+            }
+            return None;
+        }
+        Tree::Leaf((_, id)) => {
+            if find_id == *id {
+                return Some(tree);
+            }
+            return None;
+        }
+    };
+}
+
 #[allow(dead_code)]
-pub fn print_parent_as_dot(prefix: &str, tree: &Tree<(String, ModuleId)>, target: &mut Write) {
+pub fn print_parent_as_dot(
+    prefix: &str,
+    tree: &Tree<(String, ModuleId)>,
+    target: &mut Write,
+    modules: &mut Vec<ModuleId>,
+    level: u64,
+    max_level: u64,
+) {
+    if level == max_level {
+        return;
+    }
     match tree {
         Tree::Node((name, id), children) => {
+            modules.push(*id);
             target
                 .write(
                     format!(
@@ -623,12 +682,20 @@ pub fn print_parent_as_dot(prefix: &str, tree: &Tree<(String, ModuleId)>, target
             for c in children {
                 let mut new_prefix = "\t".to_owned();
                 new_prefix.push_str(prefix);
-                print_parent_as_dot(new_prefix.as_str(), c, target);
+                print_parent_as_dot(
+                    new_prefix.as_str(),
+                    c,
+                    target,
+                    modules,
+                    level + 1,
+                    max_level,
+                );
             }
 
             target.write(format!("{} }}\n", prefix).as_bytes()).unwrap();
         }
         Tree::Leaf((name, id)) => {
+            modules.push(*id);
             target
                 .write(format!("{}{}[label={}{}];\n", prefix, id.raw(), name, id.raw()).as_bytes())
                 .unwrap();
