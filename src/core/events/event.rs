@@ -1,5 +1,5 @@
 use std::any::Any;
-use crate::id_mngmnt::id_types::{EventsId, EventsTypeId, ModuleId};
+use crate::core::id_mngmnt::id_types::{EventsId, EventsTypeId, ModuleId};
 
 pub trait Event {
     fn event_type_id(&self) -> EventsTypeId;

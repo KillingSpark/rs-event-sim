@@ -1,6 +1,8 @@
-use crate::contexts::SimulationContext;
-use crate::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId};
-use crate::messages::message::Message;
+use crate::core::contexts::SimulationContext;
+use crate::core::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId};
+use crate::core::messages::message::Message;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::connection::connection::Connection;
 use rand::RngCore;
 
 pub struct SimpleConnection {
@@ -15,11 +17,11 @@ pub struct SimpleConnection {
 }
 
 pub static TYPE_STR: &str = "SimpleConnection";
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 pub fn new_simple_connection(
-    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    id_reg: &mut IdRegistrar,
     delay: u64,
     delay_max_add: u64,
     drop_chance: u64,
@@ -34,7 +36,7 @@ pub fn new_simple_connection(
     }
 }
 
-impl crate::connection::connection::Connection for SimpleConnection {
+impl Connection for SimpleConnection {
     fn handle_message(
         &mut self,
         message: Box<Message>,

@@ -1,19 +1,19 @@
-use crate::connection::connection::Port;
-use crate::event::Event;
-use crate::id_mngmnt::id_registrar::IdRegistrar;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
+use crate::core::connection::connection::Port;
+use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::core::contexts::EventHandleContext;
+use crate::core::connection::mesh::ConnectionKind;
+use crate::core::connection::simple_connection;
+use crate::core::modules::container;
+use crate::core::runner;
+use crate::core::runner::Runner;
 
-use crate::connection::mesh::ConnectionKind;
-use crate::connection::simple_connection;
-use crate::modules::container;
-use crate::modules::queue;
-use crate::modules::router::rate_puller;
-use crate::modules::splitter;
-use crate::runner;
-use crate::runner::Runner;
+use crate::net::router::rate_puller;
+use crate::net::queue;
+use crate::net::splitter;
 
 pub struct Router {
     type_id: ModuleTypeId,
@@ -41,7 +41,7 @@ pub fn register(id_reg: &mut IdRegistrar) {
 }
 
 fn new(
-    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    id_reg: &mut IdRegistrar,
     name: String,
     routing_table: std::collections::HashMap<PortId, PortId>,
 ) -> Router {

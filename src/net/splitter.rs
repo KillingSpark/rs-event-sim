@@ -1,9 +1,10 @@
-use crate::connection::connection::Port;
-use crate::event::Event;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
+use crate::core::connection::connection::Port;
+use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::core::contexts::EventHandleContext;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct Splitter {
     type_id: ModuleTypeId,
@@ -21,11 +22,11 @@ pub const IN_OUT_GATE: GateId = GateId(2);
 
 pub static TYPE_STR: &str = "SplitModule";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, name: String) -> Splitter {
+pub fn new(id_reg: &mut IdRegistrar, name: String) -> Splitter {
     Splitter {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),

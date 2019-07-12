@@ -1,7 +1,9 @@
 use crate::event::TimerEvent;
 use std::collections::{BinaryHeap, VecDeque};
-use crate::id_mngmnt::id_types::{GateId, PortId};
-use crate::messages::message::Message;
+use crate::core::id_mngmnt::id_types::{GateId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::clock::Clock;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct EventHandleContext<'a> {
     pub mctx: SimulationContext<'a>,
@@ -12,7 +14,7 @@ pub struct EventHandleContext<'a> {
 }
 
 pub struct SimulationContext<'a> {
-    pub time: &'a crate::clock::Clock,
-    pub id_reg: &'a mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    pub time: &'a Clock,
+    pub id_reg: &'a mut IdRegistrar,
     pub prng: &'a mut rand::prng::XorShiftRng,
 }

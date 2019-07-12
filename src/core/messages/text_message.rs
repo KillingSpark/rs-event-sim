@@ -1,6 +1,7 @@
-use crate::messages::message::Message;
+use crate::core::messages::message::Message;
 use std::any::Any;
-use crate::id_mngmnt::id_types::{MessageId, MessageTypeId};
+use crate::core::id_mngmnt::id_types::{MessageId, MessageTypeId};
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct TextMsg {
     pub id: MessageId,
@@ -9,10 +10,10 @@ pub struct TextMsg {
 }
 
 pub static TYPE_STR: &str = "TextMessage";
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
-pub fn new_text_msg(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, data: String) -> TextMsg {
+pub fn new_text_msg(id_reg: &mut IdRegistrar, data: String) -> TextMsg {
     TextMsg {
         id: id_reg.new_message_id(),
         type_id: id_reg.lookup_message_id(TYPE_STR.to_owned()).unwrap(),

@@ -1,11 +1,13 @@
-use crate::connection::connection::Port;
-use crate::event::{Event, TimerEvent};
-use crate::events::text_event::{new_text_event, TextEvent};
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::messages::text_message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
+use crate::core::connection::connection::Port;
+use crate::core::events::event::{Event, TimerEvent};
+use crate::core::events::text_event::{new_text_event, TextEvent};
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::messages::text_message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::core::contexts::EventHandleContext;
+
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct SimpleModule {
     pub type_id: ModuleTypeId,
@@ -23,12 +25,12 @@ pub static OUT_GATE: GateId = GateId(0);
 pub static IN_GATE: GateId = GateId(1);
 pub static TYPE_STR: &str = "SimpleModule";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
 pub fn new_simple_module(
-    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    id_reg: &mut IdRegistrar,
     name: String,
 ) -> SimpleModule {
     SimpleModule {

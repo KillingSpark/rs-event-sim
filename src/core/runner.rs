@@ -1,12 +1,14 @@
-use crate::clock;
-use crate::connection::connection::Connection;
-use crate::connection::mesh::ConnectionMesh;
-use crate::contexts::{EventHandleContext, SimulationContext};
-use crate::event::TimerEvent;
-use crate::id_mngmnt::id_registrar::IdRegistrar;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, Module};
+use crate::core::clock;
+use crate::core::connection::connection::Connection;
+use crate::core::connection::mesh::ConnectionMesh;
+use crate::core::contexts::{EventHandleContext, SimulationContext};
+use crate::core::events::event::TimerEvent;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::modules::module::{FinalizeResult, Module};
+use crate::core::connection::mesh;
+use crate::core::connection::connection::PortKind;
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
@@ -213,7 +215,7 @@ impl Runner {
         &mut self,
         conn: Box<Connection>,
 
-        con_kind: crate::connection::mesh::ConnectionKind,
+        con_kind: mesh::ConnectionKind,
 
         mod_out: ModuleId,
         gate_out: GateId,
@@ -552,8 +554,8 @@ impl Runner {
 
         for ((mod_id, gate_id, port_id), port) in &self.connections.gates {
             match port.kind {
-                crate::connection::connection::PortKind::In => { /*ignore */ }
-                crate::connection::connection::PortKind::Out => {
+                PortKind::In => { /*ignore */ }
+                PortKind::Out => {
                     target
                         .write(
                             format!(
@@ -571,7 +573,7 @@ impl Runner {
                         )
                         .unwrap();
                 }
-                crate::connection::connection::PortKind::InOut => {
+                PortKind::InOut => {
                     if *mod_id < port.rcv_mod {
                         target
                             .write(

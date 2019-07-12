@@ -1,27 +1,20 @@
-mod clock;
-mod connection;
-mod events;
-mod id_mngmnt;
-mod messages;
-mod modules;
-mod runner;
-mod factory;
-mod ned_parser;
-mod contexts;
+mod core;
+mod net;
 
-use id_mngmnt::id_registrar::IdRegistrar;
-use id_mngmnt::id_types::GateId;
-use id_mngmnt::id_types::ModuleId;
-use id_mngmnt::id_types::PortId;
-use modules::container;
-use modules::echo_module;
-use modules::router;
-use modules::simple_module;
-use modules::sink;
-
-use connection::simple_connection;
-use events::{event, text_event};
-use messages::text_message;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::GateId;
+use crate::core::id_mngmnt::id_types::ModuleId;
+use crate::core::id_mngmnt::id_types::PortId;
+use crate::core::modules::container;
+use crate::core::modules::echo_module;
+use crate::net::router;
+use crate::core::modules::simple_module;
+use crate::core::modules::sink;
+use crate::core::connection::simple_connection;
+use crate::core::events::{event, text_event};
+use crate::core::messages::text_message;
+use crate::core::runner;
+use crate::core::connection::mesh;
 
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
@@ -63,7 +56,7 @@ fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
 
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Onedirectional,
+        mesh::ConnectionKind::Onedirectional,
         group_id,
         GateId(0),
         PortId(0),
@@ -75,7 +68,7 @@ fn setup_group(r: &mut runner::Runner, id_reg: &mut IdRegistrar) -> ModuleId {
 
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 0, 0, 0)),
-        crate::connection::mesh::ConnectionKind::Bidrectional,
+        mesh::ConnectionKind::Bidrectional,
         group_id,
         GateId(0),
         PortId(1),
@@ -125,7 +118,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     //simplemodule as source to the router
     r.connect_modules(
         Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
-        crate::connection::mesh::ConnectionKind::Onedirectional,
+        mesh::ConnectionKind::Onedirectional,
         smod_id,
         simple_module::OUT_GATE,
         PortId(0),
@@ -140,7 +133,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
     for group in groups {
         r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 10, 0)),
-            crate::connection::mesh::ConnectionKind::Onedirectional,
+            mesh::ConnectionKind::Onedirectional,
             router_id,
             router::router::ROUTER_GATE_OUTER,
             PortId(idx),
@@ -152,7 +145,7 @@ fn setup_modules(r: &mut runner::Runner, id_reg: &mut IdRegistrar) {
 
         r.connect_modules(
             Box::new(simple_connection::new_simple_connection(id_reg, 1, 0, 0)),
-            crate::connection::mesh::ConnectionKind::Bidrectional,
+            mesh::ConnectionKind::Bidrectional,
             router_id,
             router::router::ROUTER_GATE_OUTER,
             PortId(idx + 1),

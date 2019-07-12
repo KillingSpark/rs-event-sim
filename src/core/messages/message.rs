@@ -1,8 +1,8 @@
-use crate::id_mngmnt::id_types::GateId;
-use crate::id_mngmnt::id_types::MessageId;
-use crate::id_mngmnt::id_types::MessageTypeId;
-use crate::id_mngmnt::id_types::ModuleId;
-use crate::id_mngmnt::id_types::PortId;
+use crate::core::id_mngmnt::id_types::GateId;
+use crate::core::id_mngmnt::id_types::MessageId;
+use crate::core::id_mngmnt::id_types::MessageTypeId;
+use crate::core::id_mngmnt::id_types::ModuleId;
+use crate::core::id_mngmnt::id_types::PortId;
 use std::any::Any;
 
 pub trait Message {

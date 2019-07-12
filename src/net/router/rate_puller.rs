@@ -1,11 +1,12 @@
-use crate::connection::connection::Port;
-use crate::event::{Event, TimerEvent};
-use crate::id_mngmnt::id_registrar::IdRegistrar;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
-use crate::text_event;
+use crate::core::connection::connection::Port;
+use crate::core::contexts::EventHandleContext;
+use crate::core::events::event::{Event, TimerEvent};
+use crate::core::events::text_event;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::messages::text_message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
 
 pub struct RatePuller {
     type_id: ModuleTypeId,
@@ -28,7 +29,7 @@ pub const TRIG_GATE: GateId = GateId(2);
 
 pub static TYPE_STR: &str = "RatePullerModule";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
@@ -60,7 +61,7 @@ impl Module for RatePuller {
             IN_GATE => {
                 if ctx.mctx.time.now() - self.last_time_requested > self.rate {
                     self.last_time_requested = ctx.mctx.time.now();
-                    let sig = Box::new(crate::messages::text_message::new_text_msg(
+                    let sig = Box::new(text_message::new_text_msg(
                         ctx.mctx.id_reg,
                         "New Message Plz".to_owned(),
                     ));
@@ -94,7 +95,7 @@ impl Module for RatePuller {
         _ev: &Event,
         ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        let sig = Box::new(crate::messages::text_message::new_text_msg(
+        let sig = Box::new(text_message::new_text_msg(
             ctx.mctx.id_reg,
             "New Message Plz".to_owned(),
         ));
@@ -130,7 +131,7 @@ impl Module for RatePuller {
             .collect();
 
         for port in &self.ports {
-            let sig = Box::new(crate::messages::text_message::new_text_msg(
+            let sig = Box::new(text_message::new_text_msg(
                 ctx.mctx.id_reg,
                 "New Message Plz".to_owned(),
             ));

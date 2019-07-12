@@ -1,9 +1,10 @@
-use crate::connection::connection::Port;
-use crate::event::Event;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
+use crate::core::connection::connection::Port;
+use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::core::contexts::EventHandleContext;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct ModuleContainer {
     pub type_id: ModuleTypeId,
@@ -16,12 +17,12 @@ pub struct ModuleContainer {
 
 pub static TYPE_STR: &str = "ModuleContainer";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
 pub fn new_module_container(
-    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    id_reg: &mut IdRegistrar,
     name: String,
     gates: Vec<(GateId, GateId)>,
 ) -> ModuleContainer {

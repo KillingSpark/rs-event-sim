@@ -1,9 +1,10 @@
-use crate::connection::connection::Port;
-use crate::event::Event;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::contexts::EventHandleContext;
+use crate::core::connection::connection::Port;
+use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::core::contexts::EventHandleContext;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
@@ -17,12 +18,12 @@ pub static OUT_GATE: GateId = GateId(0);
 pub static IN_GATE: GateId = GateId(1);
 pub static TYPE_STR: &str = "EchoModule";
 
-pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
+pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
 pub fn new_echo_module(
-    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    id_reg: &mut IdRegistrar,
     name: String,
 ) -> EchoModule {
     EchoModule {

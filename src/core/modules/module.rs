@@ -1,8 +1,10 @@
-use crate::connection::connection::Port;
-use crate::contexts::EventHandleContext;
-use crate::event::Event;
-use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
-use crate::messages::message::Message;
+use crate::core::connection::connection::Port;
+use crate::core::contexts::EventHandleContext;
+use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
+use crate::core::messages::message::Message;
+
+use std::collections::HashMap;
 
 pub struct HandleResult {}
 
@@ -33,7 +35,7 @@ pub trait Module {
     fn get_gate_ids(&self) -> Vec<GateId>;
     fn initialize(
         &mut self,
-        gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
+        gates: &HashMap<GateId, HashMap<PortId, Port>>,
         ctx: &mut EventHandleContext,
     );
     fn finalize(&mut self, ctx: &mut EventHandleContext) -> Option<FinalizeResult>;

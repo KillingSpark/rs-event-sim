@@ -1,7 +1,7 @@
-use crate::connection::connection::*;
-use crate::contexts::SimulationContext;
-use crate::id_mngmnt::id_types::{ConnectionId, GateId, ModuleId, PortId};
-use crate::messages::message::{Message, TimedMessage};
+use crate::core::connection::connection::*;
+use crate::core::contexts::SimulationContext;
+use crate::core::id_mngmnt::id_types::{ConnectionId, GateId, ModuleId, PortId};
+use crate::core::messages::message::{Message, TimedMessage};
 
 pub enum ConnectionKind {
     Onedirectional,
