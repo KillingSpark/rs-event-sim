@@ -1,20 +1,19 @@
-mod core;
-mod net;
+extern crate sim;
 
-use crate::core::id_mngmnt::id_registrar::IdRegistrar;
-use crate::core::id_mngmnt::id_types::GateId;
-use crate::core::id_mngmnt::id_types::ModuleId;
-use crate::core::id_mngmnt::id_types::PortId;
-use crate::core::modules::container;
-use crate::core::modules::echo_module;
-use crate::net::router;
-use crate::core::modules::simple_module;
-use crate::core::modules::sink;
-use crate::core::connection::simple_connection;
-use crate::core::events::{event, text_event};
-use crate::core::messages::text_message;
-use crate::core::runner;
-use crate::core::connection::mesh;
+use sim::core::id_mngmnt::id_registrar::IdRegistrar;
+use sim::core::id_mngmnt::id_types::GateId;
+use sim::core::id_mngmnt::id_types::ModuleId;
+use sim::core::id_mngmnt::id_types::PortId;
+use sim::core::modules::container;
+use sim::core::modules::echo_module;
+use sim::net::router;
+use sim::core::modules::simple_module;
+use sim::core::modules::sink;
+use sim::core::connection::simple_connection;
+use sim::core::events::text_event;
+use sim::core::messages::text_message;
+use sim::core::runner;
+use sim::core::connection::mesh;
 
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);

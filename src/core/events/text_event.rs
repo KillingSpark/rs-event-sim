@@ -1,4 +1,4 @@
-use crate::event::Event;
+use crate::core::events::event::Event;
 use std::any::Any;
 use crate::core::id_mngmnt::id_types::{EventsId, EventsTypeId};
 use crate::core::id_mngmnt::id_registrar::IdRegistrar;

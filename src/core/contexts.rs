@@ -1,4 +1,4 @@
-use crate::event::TimerEvent;
+use crate::core::events::event::TimerEvent;
 use std::collections::{BinaryHeap, VecDeque};
 use crate::core::id_mngmnt::id_types::{GateId, PortId};
 use crate::core::messages::message::Message;
