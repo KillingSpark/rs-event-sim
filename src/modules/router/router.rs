@@ -250,7 +250,7 @@ impl Module for Router {
     }
 
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalize Queue: {}", &self.name);
+        //println!("Finalize Roouter: {}", &self.name);
         None
     }
 }

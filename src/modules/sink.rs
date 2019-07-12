@@ -86,7 +86,7 @@ impl Module for Sink {
 
     }
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalize Sink: {}", self.id.raw());
+        //println!("Finalize Sink: {}", self.id.raw());
         Some(FinalizeResult {
             results: vec![(
                 self.name(),

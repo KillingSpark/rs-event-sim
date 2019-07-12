@@ -59,14 +59,14 @@ impl Module for EchoModule {
 
     fn handle_timer_event(
         &mut self,
-        ev: &Event,
+        _ev: &Event,
         _ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
-        println!(
-            "EchoModule with ID: {} swallowed event with ID: {}!",
-            self.id.raw(),
-            ev.event_id().raw(),
-        );
+        //println!(
+        //    "EchoModule with ID: {} swallowed event with ID: {}!",
+        //    self.id.raw(),
+        //    ev.event_id().raw(),
+        //);
 
         Ok(HandleResult {})
     }
@@ -91,7 +91,7 @@ impl Module for EchoModule {
     }
 
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalize Echo: {}", self.id.raw());
+        //println!("Finalize Echo: {}", self.id.raw());
         Some(FinalizeResult {
             results: vec![(
                 self.name(),

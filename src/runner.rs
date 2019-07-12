@@ -181,15 +181,6 @@ impl Runner {
             (*module).initialize(&gate_map, &mut ctx);
             while ctx.msgs_to_send.len() > 0 {
                 let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
-                println!(
-                    "Type {}",
-                    ctx.mctx
-                        .id_reg
-                        .type_ids_reverse
-                        .get(&module.module_type_id().0)
-                        .unwrap()
-                );
-                println!("Msgs: {}", ctx.msgs_to_send.len());
                 self.connections
                     .send_message(msg, module.module_id(), gate, port, &mut ctx.mctx);
             }
@@ -532,12 +523,19 @@ impl Runner {
         println!("##################");
         println!("");
 
+        let start = std::time::Instant::now();
+
         let result = self.run_main_loop(id_reg, endtime);
+
+        let end = std::time::Instant::now();
+
+        let duration = end.duration_since(start);
 
         println!("");
         println!("##################");
         println!("");
         println!("No more messages nor events available. This simulation is over.");
+        println!("Running took: {:?}", duration);
 
         println!("Finalizing Modules");
         self.finalize_modules(id_reg);

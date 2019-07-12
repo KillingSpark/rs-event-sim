@@ -120,7 +120,7 @@ impl Module for ModuleContainer {
     }
 
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalized: {}, {}", &self.name, self.id.raw());
+        //println!("Finalized: {}, {}", &self.name, self.id.raw());
         None
     }
 }

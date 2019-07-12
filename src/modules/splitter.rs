@@ -87,7 +87,7 @@ impl Module for Splitter {
     }
 
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalize Queue: {}", &self.name);
+        //println!("Finalize Splitter: {}", &self.name);
         None
     }
 }

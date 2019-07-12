@@ -172,7 +172,7 @@ impl Module for SimpleModule {
     }
 
     fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
-        println!("Finalize SimpleModule: {}", self.id.raw());
+        //println!("Finalize SimpleModule: {}", self.id.raw());
         Some(FinalizeResult {
             results: vec![(
                 self.name(),
