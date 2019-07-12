@@ -1,7 +1,9 @@
-use crate::event::{Event};
+use crate::event::Event;
+use crate::connection::connection::Port;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 
 pub struct Queue {
     type_id: ModuleTypeId,
@@ -49,7 +51,7 @@ impl Module for Queue {
         msg: Box<Message>,
         gate: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             IN_GATE => {
@@ -57,8 +59,7 @@ impl Module for Queue {
                 //else put into queue
                 if !self.receive_ready.is_empty() {
                     let bufferd_port = self.receive_ready.remove(0);
-                    ctx.connections
-                        .send_message(msg, self.id, OUT_GATE, bufferd_port, &mut ctx.mctx);
+                    ctx.msgs_to_send.push_back((msg, OUT_GATE, bufferd_port));
                 } else {
                     self.msgs.push(msg);
                 }
@@ -69,8 +70,7 @@ impl Module for Queue {
             TRIGG_GATE => {
                 if !self.msgs.is_empty() {
                     let bufferd_msg = self.msgs.remove(0);
-                    ctx.connections
-                        .send_message(bufferd_msg, self.id, OUT_GATE, port, &mut ctx.mctx);
+                    ctx.msgs_to_send.push_back((bufferd_msg, OUT_GATE, port));
                 } else {
                     self.receive_ready.push(port);
                 }
@@ -85,7 +85,7 @@ impl Module for Queue {
     fn handle_timer_event(
         &mut self,
         _ev: &Event,
-        _ctx: &mut HandleContext,
+        _ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         panic!("Should never receive timer events")
     }
@@ -102,9 +102,14 @@ impl Module for Queue {
         self.name.clone()
     }
 
-    fn initialize(&mut self, _ctx: &mut HandleContext) {}
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
+        _ctx: &mut EventHandleContext,
+    ) {
+    }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);
         None
     }

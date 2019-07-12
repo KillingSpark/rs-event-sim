@@ -1,16 +1,19 @@
 use crate::clock;
-use crate::connection::connection;
 use crate::connection::connection::Connection;
 use crate::connection::mesh::ConnectionMesh;
+use crate::contexts::{EventHandleContext, SimulationContext};
 use crate::event::TimerEvent;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, PortId};
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::messages::message::Message;
+use crate::modules::module::{FinalizeResult, Module};
 
 use rand::prng::XorShiftRng;
 use rand::SeedableRng;
 
+use std::cell::RefCell;
 use std::io::Write;
+use std::rc::Rc;
 use std::string::String;
 
 #[derive(Clone)]
@@ -20,11 +23,11 @@ pub enum Tree<T> {
 }
 
 struct ModuleMngr {
-    modules: std::collections::HashMap<ModuleId, Box<Module>>,
+    modules: std::collections::HashMap<ModuleId, Rc<RefCell<Box<Module>>>>,
 }
 
 impl ModuleMngr {
-    fn finalize_modules(&mut self, tree: &Tree<(String, ModuleId)>, ctx: &mut HandleContext) {
+    fn finalize_modules(&mut self, tree: &Tree<(String, ModuleId)>, ctx: &mut EventHandleContext) {
         let mut global_results = Vec::new();
 
         match tree {
@@ -46,16 +49,10 @@ impl ModuleMngr {
         //}
     }
 
-    fn init_modules(&mut self, ctx: &mut HandleContext) {
-        self.modules.iter_mut().for_each(|(_, module)| {
-            module.initialize(ctx);
-        });
-    }
-
     fn finalize_modules_rec(
         &mut self,
         tree: &Tree<(String, ModuleId)>,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Option<FinalizeResult> {
         let mut local_results = FinalizeResult {
             results: Vec::new(),
@@ -82,14 +79,26 @@ impl ModuleMngr {
                     }
                 }
 
-                match self.modules.get_mut(&id).unwrap().finalize(ctx) {
+                match self
+                    .modules
+                    .get_mut(&id)
+                    .unwrap()
+                    .borrow_mut()
+                    .finalize(ctx)
+                {
                     Some(mut container_results) => {
                         local_results.results.append(&mut container_results.results);
                     }
                     None => {}
                 }
             }
-            Tree::Leaf((_, id)) => match self.modules.get_mut(&id).unwrap().finalize(ctx) {
+            Tree::Leaf((_, id)) => match self
+                .modules
+                .get_mut(&id)
+                .unwrap()
+                .borrow_mut()
+                .finalize(ctx)
+            {
                 Some(mut r) => {
                     local_results.results.append(&mut r.results);
                 }
@@ -109,6 +118,7 @@ pub struct Runner {
     clock: clock::Clock,
 
     timer_queue: std::collections::BinaryHeap<TimerEvent>,
+    msg_buffer: std::collections::VecDeque<(Box<Message>, GateId, PortId)>,
 
     pub connections: ConnectionMesh,
     prng: rand::prng::XorShiftRng,
@@ -125,6 +135,7 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
             modules: std::collections::HashMap::new(),
         },
         timer_queue: std::collections::BinaryHeap::new(),
+        msg_buffer: std::collections::VecDeque::new(),
 
         connections: ConnectionMesh {
             connections: std::collections::HashMap::new(),
@@ -142,26 +153,55 @@ pub fn new_runner(seed: [u8; 16]) -> Runner {
 
 impl Runner {
     pub fn init_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut ctx = HandleContext {
-            connections: &mut self.connections,
+        let mut ctx = EventHandleContext {
+            msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
-            mctx: connection::HandleContext {
+            mctx: SimulationContext {
                 prng: &mut self.prng,
                 id_reg: id_reg,
                 time: &self.clock,
             },
         };
 
-        self.modules.init_modules(&mut ctx);
+        for (_, module) in &mut self.modules.modules {
+            let mut module = module.borrow_mut();
+            let mod_id = (*module).module_id();
+
+            let mut gate_map = std::collections::HashMap::new();
+            for ((m, g, p), port) in &self.connections.gates {
+                if *m == mod_id {
+                    if gate_map.get(g).is_none() {
+                        gate_map.insert(*g, std::collections::HashMap::new());
+                    }
+                    gate_map.get_mut(g).unwrap().insert(*p, *port);
+                }
+            }
+
+            (*module).initialize(&gate_map, &mut ctx);
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                println!(
+                    "Type {}",
+                    ctx.mctx
+                        .id_reg
+                        .type_ids_reverse
+                        .get(&module.module_type_id().0)
+                        .unwrap()
+                );
+                println!("Msgs: {}", ctx.msgs_to_send.len());
+                self.connections
+                    .send_message(msg, module.module_id(), gate, port, &mut ctx.mctx);
+            }
+        }
     }
 
     pub fn finalize_modules(&mut self, id_reg: &mut IdRegistrar) {
-        let mut ctx = HandleContext {
-            connections: &mut self.connections,
+        let mut ctx = EventHandleContext {
+            msgs_to_send: &mut self.msg_buffer,
             timer_queue: &mut self.timer_queue,
 
-            mctx: connection::HandleContext {
+            mctx: SimulationContext {
                 prng: &mut self.prng,
                 id_reg: id_reg,
                 time: &self.clock,
@@ -232,20 +272,12 @@ impl Runner {
             None => {}
         }
 
-        self.connections
-            .gates
-            .insert(module.module_id(), std::collections::HashMap::new());
-
-        for g in module.get_gate_ids() {
-            self.connections.add_gate(module.module_id(), g);
-        }
-
-        self.modules.modules.insert(module.module_id(), module);
+        self.modules
+            .modules
+            .insert(module.module_id(), Rc::new(RefCell::new(module)));
 
         Ok(())
     }
-
-    fn process_result(&mut self, _result: HandleResult) {}
 
     //returns how many messages were found
     fn process_messages(&mut self, id_reg: &mut IdRegistrar) -> u64 {
@@ -263,22 +295,31 @@ impl Runner {
             }
 
             let tmsg = self.connections.messages.pop().unwrap();
-            let mut ctx = HandleContext {
-                connections: &mut self.connections,
+            let mut ctx = EventHandleContext {
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,
                 },
             };
+
             self.modules
                 .modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
+                .borrow_mut()
                 .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
+
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                self.connections
+                    .send_message(msg, tmsg.recipient, gate, port, &mut ctx.mctx);
+            }
+
             msg_counter += 1;
         }
 
@@ -288,11 +329,11 @@ impl Runner {
             }
 
             let tmsg = self.connections.messages_now.pop_front().unwrap();
-            let mut ctx = HandleContext {
-                connections: &mut self.connections,
+            let mut ctx = EventHandleContext {
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,
@@ -302,8 +343,15 @@ impl Runner {
                 .modules
                 .get_mut(&tmsg.recipient)
                 .unwrap()
+                .borrow_mut()
                 .handle_message(tmsg.msg, tmsg.recp_gate, tmsg.recp_port, &mut ctx)
                 .unwrap();
+
+            while ctx.msgs_to_send.len() > 0 {
+                let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+                self.connections
+                    .send_message(msg, tmsg.recipient, gate, port, &mut ctx.mctx);
+            }
             msg_counter += 1;
         }
 
@@ -326,18 +374,18 @@ impl Runner {
 
             let ev = self.timer_queue.pop().unwrap();
 
-            let module = match self.modules.modules.get_mut(&ev.mod_id) {
-                Some(m) => m,
+            let mut module = match self.modules.modules.get_mut(&ev.mod_id) {
+                Some(m) => m.borrow_mut(),
                 None => panic!(
                     "Non existent module-ID found in a timer-event: {}",
                     ev.mod_id.raw(),
                 ),
             };
-            let mut ctx = HandleContext {
-                connections: &mut self.connections,
+            let mut ctx = EventHandleContext {
+                msgs_to_send: &mut self.msg_buffer,
                 timer_queue: &mut self.timer_queue,
 
-                mctx: connection::HandleContext {
+                mctx: SimulationContext {
                     prng: &mut self.prng,
                     id_reg: id_reg,
                     time: &self.clock,
@@ -347,8 +395,18 @@ impl Runner {
             let result = module.handle_timer_event(ev.event.as_ref(), &mut ctx);
             match result {
                 Err(e) => return Err(e),
-                Ok(res) => {
-                    self.process_result(res);
+                Ok(_) => {
+                    while ctx.msgs_to_send.len() > 0 {
+                        let (msg, gate, port) = ctx.msgs_to_send.pop_front().unwrap();
+
+                        self.connections.send_message(
+                            msg,
+                            module.module_id(),
+                            gate,
+                            port,
+                            &mut ctx.mctx,
+                        );
+                    }
                 }
             }
 
@@ -494,49 +552,45 @@ impl Runner {
             print_parent_as_dot("\t", m, target);
         }
 
-        for (mod_id, gates) in &self.connections.gates {
-            for (gate_id, gate) in gates {
-                for (port_id, port) in &gate.ports {
-                    match port.kind {
-                        crate::connection::connection::PortKind::In => { /*ignore */ }
-                        crate::connection::connection::PortKind::Out => {
-                            target
-                                .write(
-                                    format!(
-                                        "\t{} -> {}[label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
-                                            mod_id.raw(),
-                                            port.rcv_mod.raw(),
-                                            mod_id.raw(),
-                                            gate_id.0,
-                                            port_id.0,
-                                            port.rcv_mod.raw(),
-                                            port.rcv_gate.0,
-                                            port.rcv_port.0,
-                                    )
-                                    .as_bytes(),
+        for ((mod_id, gate_id, port_id), port) in &self.connections.gates {
+            match port.kind {
+                crate::connection::connection::PortKind::In => { /*ignore */ }
+                crate::connection::connection::PortKind::Out => {
+                    target
+                        .write(
+                            format!(
+                                "\t{} -> {}[label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
+                                mod_id.raw(),
+                                port.rcv_mod.raw(),
+                                mod_id.raw(),
+                                gate_id.0,
+                                port_id.0,
+                                port.rcv_mod.raw(),
+                                port.rcv_gate.0,
+                                port.rcv_port.0,
+                            )
+                            .as_bytes(),
+                        )
+                        .unwrap();
+                }
+                crate::connection::connection::PortKind::InOut => {
+                    if *mod_id < port.rcv_mod {
+                        target
+                            .write(
+                                format!(
+                                    "\t{} -> {}[dir=\"both\",label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
+                                    mod_id.raw(),
+                                    port.rcv_mod.raw(),
+                                    mod_id.raw(),
+                                    gate_id.0,
+                                    port_id.0,
+                                    port.rcv_mod.raw(),
+                                    port.rcv_gate.0,
+                                    port.rcv_port.0,
                                 )
-                                .unwrap();
-                        }
-                        crate::connection::connection::PortKind::InOut => {
-                            if *mod_id < port.rcv_mod {
-                                target
-                                    .write(
-                                        format!(
-                                            "\t{} -> {}[dir=\"both\",label=\"M{}G{}P{}, M{}G{}P{}\"];\n",
-                                            mod_id.raw(),
-                                            port.rcv_mod.raw(),
-                                            mod_id.raw(),
-                                            gate_id.0,
-                                            port_id.0,
-                                            port.rcv_mod.raw(),
-                                            port.rcv_gate.0,
-                                            port.rcv_port.0,
-                                        )
-                                        .as_bytes(),
-                                    )
-                                    .unwrap();
-                            }
-                        }
+                                .as_bytes(),
+                            )
+                            .unwrap();
                     }
                 }
             }

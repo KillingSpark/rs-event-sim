@@ -1,9 +1,12 @@
+#![allow(dead_code)]
+
 use std::collections::HashMap;
 use crate::id_mngmnt::id_types::{GateId, ModuleTypeId};
 use crate::modules::module::Module;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 
 use crate::modules::container;
+
 
 pub fn container_from_params(id_reg: &mut IdRegistrar,  parameters: &HashMap<&str, &str>) -> GeneratorResult {
     let name = (*parameters.get(&"name").unwrap()).to_owned();

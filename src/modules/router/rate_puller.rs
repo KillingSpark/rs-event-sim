@@ -1,8 +1,10 @@
+use crate::connection::connection::Port;
 use crate::event::{Event, TimerEvent};
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 use crate::text_event;
 
 pub struct RatePuller {
@@ -12,6 +14,7 @@ pub struct RatePuller {
 
     rate: u64, //how often to request a message
     last_time_requested: u64,
+    ports: Vec<PortId>,
 }
 
 //messages get sent out here (and buffered)
@@ -37,6 +40,7 @@ pub fn new(id_reg: &mut IdRegistrar, name: String, rate: u64) -> RatePuller {
 
         rate: rate,
         last_time_requested: 0,
+        ports: Vec::new(),
     }
 }
 
@@ -50,7 +54,7 @@ impl Module for RatePuller {
         msg: Box<Message>,
         gate: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             IN_GATE => {
@@ -60,13 +64,8 @@ impl Module for RatePuller {
                         ctx.mctx.id_reg,
                         "New Message Plz".to_owned(),
                     ));
-                    let mut mctx = crate::connection::connection::HandleContext {
-                        time: ctx.mctx.time,
-                        id_reg: ctx.mctx.id_reg,
-                        prng: ctx.mctx.prng,
-                    };
-                    ctx.connections
-                        .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
+
+                    ctx.msgs_to_send.push_back((sig, TRIG_GATE, port));
                 } else {
                     let time_till_next_pull =
                         self.rate - (ctx.mctx.time.now() - self.last_time_requested);
@@ -81,8 +80,7 @@ impl Module for RatePuller {
                     });
                 }
 
-                ctx.connections
-                    .send_message(msg, self.id, OUT_GATE, port, &mut ctx.mctx);
+                ctx.msgs_to_send.push_back((msg, OUT_GATE, port));
             }
             OUT_GATE => panic!("Should never receive message on OUT_GATE"),
             _ => panic!("Should never receive message on other gate"),
@@ -94,21 +92,16 @@ impl Module for RatePuller {
     fn handle_timer_event(
         &mut self,
         _ev: &Event,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         let sig = Box::new(crate::messages::text_message::new_text_msg(
             ctx.mctx.id_reg,
             "New Message Plz".to_owned(),
         ));
-        let mut mctx = crate::connection::connection::HandleContext {
-            time: ctx.mctx.time,
-            id_reg: ctx.mctx.id_reg,
-            prng: ctx.mctx.prng,
-        };
-        ctx.connections
-            .send_message(sig, self.id, TRIG_GATE, PortId(0), &mut mctx);
 
-        Ok(HandleResult{})
+        ctx.msgs_to_send.push_back((sig, TRIG_GATE, PortId(0)));
+
+        Ok(HandleResult {})
     }
 
     fn module_type_id(&self) -> ModuleTypeId {
@@ -123,24 +116,30 @@ impl Module for RatePuller {
         self.name.clone()
     }
 
-    fn initialize(&mut self, ctx: &mut HandleContext) {
+    fn initialize(
+        &mut self,
+        gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
+        ctx: &mut EventHandleContext,
+    ) {
         // initial request for a message
-        for port in ctx.connections.get_ports(self.id, TRIG_GATE).unwrap() {
+        self.ports = gates
+            .get(&TRIG_GATE)
+            .unwrap()
+            .keys()
+            .map(|id| *id)
+            .collect();
+
+        for port in &self.ports {
             let sig = Box::new(crate::messages::text_message::new_text_msg(
                 ctx.mctx.id_reg,
                 "New Message Plz".to_owned(),
             ));
-            let mut mctx = crate::connection::connection::HandleContext {
-                time: ctx.mctx.time,
-                id_reg: ctx.mctx.id_reg,
-                prng: ctx.mctx.prng,
-            };
-            ctx.connections
-                .send_message(sig, self.id, TRIG_GATE, port, &mut mctx);
+
+            ctx.msgs_to_send.push_back((sig, TRIG_GATE, *port));
         }
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);
         None
     }

@@ -1,9 +1,10 @@
+use crate::connection::connection::Port;
 use crate::event::Event;
 use crate::id_mngmnt::id_registrar::IdRegistrar;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{FinalizeResult, HandleContext, HandleResult, Module};
-
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 
 use crate::connection::mesh::ConnectionKind;
 use crate::connection::simple_connection;
@@ -11,8 +12,8 @@ use crate::modules::container;
 use crate::modules::queue;
 use crate::modules::router::rate_puller;
 use crate::modules::splitter;
-use crate::runner::Runner;
 use crate::runner;
+use crate::runner::Runner;
 
 pub struct Router {
     type_id: ModuleTypeId,
@@ -23,10 +24,10 @@ pub struct Router {
 }
 
 //messages get sent out here (and buffered)
-pub const OUT_GATE: GateId = GateId(0);
+pub const OUT_GATE: GateId = GateId(100);
 
 //messages are received here, processed and sent to the out-buffer on the respective port
-pub const IN_GATE: GateId = GateId(1);
+pub const IN_GATE: GateId = GateId(200);
 
 pub static TYPE_STR: &str = "RouterModule";
 
@@ -63,7 +64,11 @@ pub fn make_router(
     name: String,
     routing_table: std::collections::HashMap<PortId, PortId>,
 ) -> (ModuleId, runner::Tree<(String, ModuleId)>) {
-    let container = Box::new(container::new_module_container(id_reg, name.clone(), vec![(ROUTER_GATE_INNER, ROUTER_GATE_OUTER)]));
+    let container = Box::new(container::new_module_container(
+        id_reg,
+        name.clone(),
+        vec![(ROUTER_GATE_INNER, ROUTER_GATE_OUTER)],
+    ));
     let container_id = container.module_id();
 
     let router = Box::new(new(id_reg, "RouterCore".to_owned(), routing_table));
@@ -180,7 +185,10 @@ pub fn make_router(
         .unwrap();
     }
 
-    (container_id, runner::Tree::Node((name, container_id), children))
+    (
+        container_id,
+        runner::Tree::Node((name, container_id), children),
+    )
 }
 
 impl Module for Router {
@@ -193,13 +201,12 @@ impl Module for Router {
         msg: Box<Message>,
         gate: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         match gate {
             IN_GATE => match self.routing_table.get(&port) {
                 Some(out_port) => {
-                    ctx.connections
-                        .send_message(msg, self.id, OUT_GATE, *out_port, &mut ctx.mctx);
+                    ctx.msgs_to_send.push_back((msg, OUT_GATE, *out_port));
                 }
                 None => {
                     //println!(
@@ -218,7 +225,7 @@ impl Module for Router {
     fn handle_timer_event(
         &mut self,
         _ev: &Event,
-        _ctx: &mut HandleContext,
+        _ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         panic!("Should never receive timer events")
     }
@@ -235,9 +242,14 @@ impl Module for Router {
         self.name.clone()
     }
 
-    fn initialize(&mut self, _ctx: &mut HandleContext) {}
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
+        _ctx: &mut EventHandleContext,
+    ) {
+    }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize Queue: {}", &self.name);
         None
     }

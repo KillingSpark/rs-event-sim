@@ -1,7 +1,9 @@
-use crate::event::{Event};
+use crate::connection::connection::Port;
+use crate::event::Event;
 use crate::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::messages::message::Message;
-use crate::modules::module::{HandleContext, HandleResult, FinalizeResult, Module};
+use crate::modules::module::{FinalizeResult, HandleResult, Module};
+use crate::contexts::EventHandleContext;
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
@@ -19,7 +21,10 @@ pub fn register(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_echo_module(id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar, name: String) -> EchoModule {
+pub fn new_echo_module(
+    id_reg: &mut crate::id_mngmnt::id_registrar::IdRegistrar,
+    name: String,
+) -> EchoModule {
     EchoModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
@@ -39,21 +44,15 @@ impl Module for EchoModule {
         msg: Box<Message>,
         gate: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         //println!(
         //    "EchoModule with ID: {} echoed message with ID: {}!",
         //    self.id.raw(),
         //    msg.msg_id().raw(),
         //);
-        let mut mctx = crate::connection::connection::HandleContext {
-            time: ctx.mctx.time,
-            id_reg: ctx.mctx.id_reg,
-            prng: ctx.mctx.prng,
-        };
-        ctx.connections
-            .send_message(msg, self.id, gate, port, &mut mctx);
-        self.msgs_echoed +=1;
+        ctx.msgs_to_send.push_back((msg, gate, port));
+        self.msgs_echoed += 1;
 
         Ok(HandleResult {})
     }
@@ -61,7 +60,7 @@ impl Module for EchoModule {
     fn handle_timer_event(
         &mut self,
         ev: &Event,
-        _ctx: &mut HandleContext,
+        _ctx: &mut EventHandleContext,
     ) -> Result<HandleResult, Box<std::error::Error>> {
         println!(
             "EchoModule with ID: {} swallowed event with ID: {}!",
@@ -84,13 +83,21 @@ impl Module for EchoModule {
         self.name.clone()
     }
 
-    fn initialize(&mut self, _ctx: &mut HandleContext) {
+    fn initialize(
+        &mut self,
+        _gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
+        _ctx: &mut EventHandleContext,
+    ) {
     }
 
-    fn finalize(&mut self, _ctx: &mut HandleContext) -> Option<FinalizeResult> {
+    fn finalize(&mut self, _ctx: &mut EventHandleContext) -> Option<FinalizeResult> {
         println!("Finalize Echo: {}", self.id.raw());
-        Some(FinalizeResult{
-            results: vec![(self.name(), "echoed_msgs".to_owned(), self.msgs_echoed.to_string())]
+        Some(FinalizeResult {
+            results: vec![(
+                self.name(),
+                "echoed_msgs".to_owned(),
+                self.msgs_echoed.to_string(),
+            )],
         })
     }
 }

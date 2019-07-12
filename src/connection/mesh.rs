@@ -1,4 +1,5 @@
 use crate::connection::connection::*;
+use crate::contexts::SimulationContext;
 use crate::id_mngmnt::id_types::{ConnectionId, GateId, ModuleId, PortId};
 use crate::messages::message::{Message, TimedMessage};
 
@@ -11,7 +12,8 @@ pub struct ConnectionMesh {
     //all connections are in here and are referenced in the other two maps
     pub connections: std::collections::HashMap<ConnectionId, Box<Connection>>,
 
-    pub gates: std::collections::HashMap<ModuleId, std::collections::HashMap<GateId, Gate>>,
+    pub gates:
+        std::collections::HashMap<(ModuleId, GateId, PortId), Port>,
 
     //messages that will be handled in the future
     pub messages: std::collections::BinaryHeap<TimedMessage>,
@@ -21,16 +23,6 @@ pub struct ConnectionMesh {
 }
 
 impl ConnectionMesh {
-    pub fn add_gate(&mut self, module: ModuleId, gate: GateId) {
-        self.gates.get_mut(&module).unwrap().insert(
-            gate,
-            Gate {
-                id: gate,
-                ports: std::collections::HashMap::new(),
-            },
-        );
-    }
-
     pub fn connect_modules(
         &mut self,
         conn: Box<Connection>,
@@ -46,21 +38,15 @@ impl ConnectionMesh {
         in_port: PortId,
     ) -> Result<(), Box<std::error::Error>> {
         {
-            let in_gate = self
-                .gates
-                .get_mut(&mod_in)
-                .unwrap()
-                .get_mut(&gate_in)
-                .unwrap();
-            match in_gate.ports.get(&in_port) {
+            match self.gates.get(&(mod_in, gate_in, in_port)) {
                 Some(_) => {
                     panic!("Tried to overwrite in-going port");
                 }
                 None => {}
             }
 
-            in_gate.ports.insert(
-                in_port,
+            self.gates.insert(
+                (mod_in, gate_in, in_port),
                 Port {
                     id: in_port,
                     conn_id: conn.connection_id(),
@@ -77,21 +63,15 @@ impl ConnectionMesh {
             );
         }
 
-        let out_gate = self
-            .gates
-            .get_mut(&mod_out)
-            .unwrap()
-            .get_mut(&gate_out)
-            .unwrap();
-        match out_gate.ports.get(&out_port) {
+        match self.gates.get(&(mod_out, gate_out, out_port)) {
             Some(_) => {
                 panic!("Tried to overwrite out-going port");
             }
             None => {}
         }
 
-        out_gate.ports.insert(
-            out_port,
+        self.gates.insert(
+            (mod_out, gate_out, out_port),
             Port {
                 id: out_port,
                 conn_id: conn.connection_id(),
@@ -112,34 +92,19 @@ impl ConnectionMesh {
         Ok(())
     }
 
-    pub fn get_ports(&mut self, mod_id: ModuleId, gate_id: GateId) -> Option<Vec<PortId>> {
-        match self.gates.get(&mod_id).unwrap().get(&gate_id) {
-            Some(gate) => {
-                let mut keys: Vec<PortId> = gate.ports.keys().map(|key_ref| *key_ref).collect();
-                keys.sort();
-                Some(keys)
-            }
-            None => None,
-        }
-    }
-
     pub fn send_message(
         &mut self,
         msg: Box<Message>,
         sender_mod_id: ModuleId,
         gate_id: GateId,
         port: PortId,
-        ctx: &mut HandleContext,
+        ctx: &mut SimulationContext,
     ) {
-        let out_port = &self
-            .gates
-            .get(&sender_mod_id)
-            .unwrap()
-            .get(&gate_id)
-            .unwrap()
-            .ports
-            .get(&port)
-            .unwrap();
+        let triple = (sender_mod_id, gate_id, port);
+        let out_port = match self.gates.get(&triple) {
+            Some(port) => port,
+            None => panic!("illegal port {}", port.0),
+        };
 
         match out_port.kind {
             PortKind::In => {
