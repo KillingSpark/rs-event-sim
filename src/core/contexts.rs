@@ -1,9 +1,9 @@
+use crate::core::clock::Clock;
 use crate::core::events::event::TimerEvent;
-use std::collections::{BinaryHeap, VecDeque};
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 use crate::core::id_mngmnt::id_types::{GateId, PortId};
 use crate::core::messages::message::Message;
-use crate::core::clock::Clock;
-use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use std::collections::{BinaryHeap, VecDeque};
 
 pub struct EventHandleContext<'a> {
     pub mctx: SimulationContext<'a>,

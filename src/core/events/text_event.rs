@@ -1,7 +1,7 @@
 use crate::core::events::event::Event;
-use std::any::Any;
-use crate::core::id_mngmnt::id_types::{EventsId, EventsTypeId};
 use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::{EventsId, EventsTypeId};
+use std::any::Any;
 
 #[derive(Clone)]
 pub struct TextEvent {

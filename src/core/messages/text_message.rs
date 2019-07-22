@@ -1,7 +1,7 @@
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
+use crate::core::id_mngmnt::id_types::{MessageId, MessageTypeId};
 use crate::core::messages::message::Message;
 use std::any::Any;
-use crate::core::id_mngmnt::id_types::{MessageId, MessageTypeId};
-use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct TextMsg {
     pub id: MessageId,

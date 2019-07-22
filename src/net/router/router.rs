@@ -1,18 +1,18 @@
 use crate::core::connection::connection::Port;
+use crate::core::connection::mesh::ConnectionKind;
+use crate::core::connection::simple_connection;
+use crate::core::contexts::EventHandleContext;
 use crate::core::events::event::Event;
 use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::core::messages::message::Message;
-use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::core::contexts::EventHandleContext;
-use crate::core::connection::mesh::ConnectionKind;
-use crate::core::connection::simple_connection;
 use crate::core::modules::container;
+use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
 use crate::core::runner;
 use crate::core::runner::Runner;
 
-use crate::net::router::rate_puller;
 use crate::net::queue;
+use crate::net::router::rate_puller;
 use crate::net::splitter;
 
 pub struct Router {

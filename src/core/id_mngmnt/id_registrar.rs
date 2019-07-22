@@ -61,7 +61,7 @@ impl IdRegistrar {
         }
     }
     pub fn lookup_module_id(&mut self, type_id: String) -> Option<ModuleTypeId> {
-       match self.lookup_id(type_id) {
+        match self.lookup_id(type_id) {
             Some(id) => Some(ModuleTypeId(*id)),
             None => None,
         }
@@ -89,6 +89,8 @@ impl IdRegistrar {
     //    self.lookup_id_reverse(match type_id{ConnectionTypeId(id) => id})
     //}
     pub fn lookup_event_id_reverse(&mut self, type_id: EventsTypeId) -> Option<&String> {
-        self.lookup_id_reverse(match type_id{EventsTypeId(id) => id})
+        self.lookup_id_reverse(match type_id {
+            EventsTypeId(id) => id,
+        })
     }
 }

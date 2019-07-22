@@ -12,8 +12,7 @@ pub struct ConnectionMesh {
     //all connections are in here and are referenced in the other two maps
     pub connections: std::collections::HashMap<ConnectionId, Box<Connection>>,
 
-    pub gates:
-        std::collections::HashMap<(ModuleId, GateId, PortId), Port>,
+    pub gates: std::collections::HashMap<(ModuleId, GateId, PortId), Port>,
 
     //messages that will be handled in the future
     pub messages: std::collections::BinaryHeap<TimedMessage>,

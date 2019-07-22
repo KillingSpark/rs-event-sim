@@ -1,6 +1,6 @@
-use crate::core::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, GateId, ModuleId, PortId};
-use crate::core::messages::message::{Message};
 use crate::core::contexts::SimulationContext;
+use crate::core::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId, GateId, ModuleId, PortId};
+use crate::core::messages::message::Message;
 
 pub trait Connection {
     fn handle_message(

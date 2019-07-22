@@ -24,7 +24,7 @@ pub struct TimedMessage {
 
 impl Ord for TimedMessage {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        //reverse so maxqueue takes event with smaller time 
+        //reverse so maxqueue takes event with smaller time
         match self.time.cmp(&other.time) {
             std::cmp::Ordering::Equal => self.msg.msg_id().cmp(&other.msg.msg_id()),
             std::cmp::Ordering::Less => std::cmp::Ordering::Greater,

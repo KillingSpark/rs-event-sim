@@ -1,8 +1,8 @@
+use crate::core::connection::connection::Connection;
 use crate::core::contexts::SimulationContext;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 use crate::core::id_mngmnt::id_types::{ConnectionId, ConnectionTypeId};
 use crate::core::messages::message::Message;
-use crate::core::id_mngmnt::id_registrar::IdRegistrar;
-use crate::core::connection::connection::Connection;
 use rand::RngCore;
 
 pub struct SimpleConnection {

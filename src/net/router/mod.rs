@@ -1,2 +1,2 @@
-pub mod router;
 pub mod rate_puller;
+pub mod router;

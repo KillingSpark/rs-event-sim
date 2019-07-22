@@ -1,5 +1,5 @@
-use std::any::Any;
 use crate::core::id_mngmnt::id_types::{EventsId, EventsTypeId, ModuleId};
+use std::any::Any;
 
 pub trait Event {
     fn event_type_id(&self) -> EventsTypeId;
@@ -10,7 +10,6 @@ pub trait Event {
     fn as_any(&self) -> &dyn Any;
 }
 
-
 pub struct TimerEvent {
     pub time: u64,
     pub mod_id: ModuleId,
@@ -20,7 +19,11 @@ pub struct TimerEvent {
 impl Ord for TimerEvent {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.time.cmp(&other.time) {
-            std::cmp::Ordering::Equal => self.event.event_id().raw().cmp(&other.event.event_id().raw()),
+            std::cmp::Ordering::Equal => self
+                .event
+                .event_id()
+                .raw()
+                .cmp(&other.event.event_id().raw()),
             std::cmp::Ordering::Less => std::cmp::Ordering::Less,
             std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
         }

@@ -1,19 +1,19 @@
 extern crate sim;
 
+use sim::core::connection::mesh;
+use sim::core::connection::simple_connection;
+use sim::core::events::text_event;
 use sim::core::id_mngmnt::id_registrar::IdRegistrar;
 use sim::core::id_mngmnt::id_types::GateId;
 use sim::core::id_mngmnt::id_types::ModuleId;
 use sim::core::id_mngmnt::id_types::PortId;
+use sim::core::messages::text_message;
 use sim::core::modules::container;
 use sim::core::modules::echo_module;
-use sim::net::router;
 use sim::core::modules::simple_module;
 use sim::core::modules::sink;
-use sim::core::connection::simple_connection;
-use sim::core::events::text_event;
-use sim::core::messages::text_message;
 use sim::core::runner;
-use sim::core::connection::mesh;
+use sim::net::router;
 
 fn register_needed_types(id_reg: &mut IdRegistrar) {
     simple_module::register(id_reg);
@@ -180,5 +180,4 @@ fn main() {
     //r.print_as_dot(&mut f);
 
     r.run(&mut id_reg, 10000).unwrap();
-
 }

@@ -6,13 +6,13 @@ pub fn new() -> Clock {
     Clock { time: 0 }
 }
 
-static YEARS: u64 = 365*DAYS;
-static WEEKS: u64 = 7*DAYS;
-static DAYS: u64 = 24*HOURS;
+static YEARS: u64 = 365 * DAYS;
+static WEEKS: u64 = 7 * DAYS;
+static DAYS: u64 = 24 * HOURS;
 static HOURS: u64 = 60 * MINUTES;
-static MINUTES: u64 = 60*SECONDS;
-static SECONDS: u64 = 1000*MILLI_SECONDS;
-static MILLI_SECONDS: u64 = 1000*MICRO_SECONDS;
+static MINUTES: u64 = 60 * SECONDS;
+static SECONDS: u64 = 1000 * MILLI_SECONDS;
+static MILLI_SECONDS: u64 = 1000 * MICRO_SECONDS;
 static MICRO_SECONDS: u64 = 1000;
 
 #[allow(dead_code)]

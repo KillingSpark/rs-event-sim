@@ -1,11 +1,11 @@
 use crate::core::connection::connection::Port;
+use crate::core::contexts::EventHandleContext;
 use crate::core::events::event::{Event, TimerEvent};
 use crate::core::events::text_event::{new_text_event, TextEvent};
 use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::core::messages::message::Message;
 use crate::core::messages::text_message;
 use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::core::contexts::EventHandleContext;
 
 use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
@@ -29,10 +29,7 @@ pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_simple_module(
-    id_reg: &mut IdRegistrar,
-    name: String,
-) -> SimpleModule {
+pub fn new_simple_module(id_reg: &mut IdRegistrar, name: String) -> SimpleModule {
     SimpleModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
@@ -159,12 +156,7 @@ impl Module for SimpleModule {
         gates: &std::collections::HashMap<GateId, std::collections::HashMap<PortId, Port>>,
         ctx: &mut EventHandleContext,
     ) {
-        self.ports = gates
-            .get(&OUT_GATE)
-            .unwrap()
-            .keys()
-            .map(|id| *id)
-            .collect();
+        self.ports = gates.get(&OUT_GATE).unwrap().keys().map(|id| *id).collect();
 
         ctx.timer_queue.push(TimerEvent {
             time: 10,

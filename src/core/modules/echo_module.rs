@@ -1,10 +1,10 @@
 use crate::core::connection::connection::Port;
+use crate::core::contexts::EventHandleContext;
 use crate::core::events::event::Event;
+use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 use crate::core::id_mngmnt::id_types::{GateId, ModuleId, ModuleTypeId, PortId};
 use crate::core::messages::message::Message;
 use crate::core::modules::module::{FinalizeResult, HandleResult, Module};
-use crate::core::contexts::EventHandleContext;
-use crate::core::id_mngmnt::id_registrar::IdRegistrar;
 
 pub struct EchoModule {
     pub type_id: ModuleTypeId,
@@ -22,10 +22,7 @@ pub fn register(id_reg: &mut IdRegistrar) {
     id_reg.register_type(TYPE_STR.to_owned());
 }
 
-pub fn new_echo_module(
-    id_reg: &mut IdRegistrar,
-    name: String,
-) -> EchoModule {
+pub fn new_echo_module(id_reg: &mut IdRegistrar, name: String) -> EchoModule {
     EchoModule {
         id: id_reg.new_module_id(),
         type_id: id_reg.lookup_module_id(TYPE_STR.to_owned()).unwrap(),
